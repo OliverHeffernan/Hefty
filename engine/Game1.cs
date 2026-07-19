@@ -48,6 +48,7 @@ public class Game1 : Game
 
     public void LoadWorld(IWorld world)
     {
+		CollisionManager.ClearColliders();
         pendingWorld = world ?? throw new ArgumentNullException(nameof(world));
     }
 
