@@ -1,7 +1,7 @@
-namespace engine;
-
-using Microsoft.Xna.Framework;
 using System;
+using Microsoft.Xna.Framework;
+
+namespace Hefty.Engine.Collision;
 
 public class Collider
 {

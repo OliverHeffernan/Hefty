@@ -1,8 +1,8 @@
-# Game Engine
+# Hefty
 
 A small 2D game-engine prototype built in C# with [MonoGame](https://monogame.net/). The project demonstrates a component-based update loop, world switching, sprites, camera tracking, keyboard input, and broad-phase collision detection.
 
-All engine implementation files are contained in `engine/`. The files in `components/`, `gameObjects/`, and `textures/` are example code used to test and demonstrate the engine; they are not part of the engine itself.
+All engine implementation files are contained in `Engine/` under the `Hefty.Engine` namespace. The files under `Examples/` are test and demonstration code; they are not part of the engine itself.
 
 ## Features
 
@@ -27,7 +27,7 @@ Clone the repository, restore the local MonoGame tools and dependencies, then ru
 
 ```bash
 git clone <repository-url>
-cd gameEngine
+cd Hefty
 dotnet tool restore
 dotnet restore
 dotnet run
@@ -51,19 +51,20 @@ dotnet build
 ## Project Structure
 
 ```text
-engine/       The complete engine implementation
-components/   Example behaviours used to test the engine
-gameObjects/  Example game objects used to test the engine
-textures/     Example procedural texture helpers used by the test worlds
-worlds/       Example scenes that demonstrate the engine
-Content/      MonoGame content-pipeline configuration and assets
-Program.cs    Application entry point
-gameEngine.csproj
+Engine/                 The complete engine implementation (`Hefty.Engine`)
+Examples/
+├── Components/         Example behaviours used to test the engine
+├── GameObjects/        Example game objects used to test the engine
+├── Textures/           Example procedural texture helpers
+└── Worlds/             Example scenes that demonstrate the engine
+Content/                MonoGame content-pipeline configuration and assets
+Program.cs              Demonstration application entry point
+Hefty.csproj
 ```
 
 ## Engine and Example Code
 
-The `engine/` directory contains the entire engine. Everything outside that directory is application, configuration, or demonstration code. In particular, `components/`, `gameObjects/`, and `textures/` contain disposable examples for exercising engine features and showing how a game could use them.
+The `Engine/` directory and `Hefty.Engine` namespace contain the entire engine. Everything under `Examples/` is disposable demonstration code for exercising engine features and showing how a game could use them. Example namespaces follow the directory structure, such as `Hefty.Examples.Components` and `Hefty.Examples.GameObjects`.
 
 A world implements `IWorld` and creates its scene in `Initialize`. Objects are registered with `Game1.Instantiate`, which adds them to the update and rendering loops according to the interfaces they implement. Calling `Game1.LoadWorld` queues a world change and safely clears the previous scene.
 

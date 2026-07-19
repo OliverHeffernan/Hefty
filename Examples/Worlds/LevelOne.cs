@@ -1,12 +1,12 @@
-using components;
-using engine;
-using gameObjects;
+using Hefty.Engine;
+using Hefty.Examples.Components;
+using Hefty.Examples.GameObjects;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using textures;
+using Hefty.Examples.Textures;
 
-namespace worlds;
+namespace Hefty.Examples.Worlds;
 
 public class LevelOne : IWorld
 {

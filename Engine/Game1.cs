@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Hefty.Engine.Collision;
 
-namespace engine;
+namespace Hefty.Engine;
+
 
 public class Game1 : Game
 {

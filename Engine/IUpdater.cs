@@ -1,5 +1,5 @@
 using Microsoft.Xna.Framework;
-namespace engine;
+namespace Hefty.Engine;
 public interface IUpdater
 {
 	void Update(GameTime gameTime);

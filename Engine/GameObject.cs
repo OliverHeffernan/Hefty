@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-namespace engine;
+namespace Hefty.Engine;
 public class GameObject(params IUpdater[] components) : IUpdater
 {
 	private readonly List<IUpdater> components = [..components];

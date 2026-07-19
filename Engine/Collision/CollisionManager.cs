@@ -1,7 +1,6 @@
-namespace engine;
-
-using System;
 using System.Collections.Generic;
+
+namespace Hefty.Engine.Collision;
 
 public static class CollisionManager
 {

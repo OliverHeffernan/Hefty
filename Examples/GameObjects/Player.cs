@@ -1,9 +1,10 @@
-using components;
-using engine;
+using Hefty.Engine;
+using Hefty.Examples.Components;
+using Hefty.Engine.Collision;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace gameObjects;
+namespace Hefty.Examples.GameObjects;
 
 public class Player : Sprite
 {

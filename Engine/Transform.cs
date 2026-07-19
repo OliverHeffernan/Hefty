@@ -1,6 +1,6 @@
 using Microsoft.Xna.Framework;
 
-namespace engine;
+namespace Hefty.Engine;
 
 public class Transform
 {

@@ -1,4 +1,4 @@
-namespace engine;
+namespace Hefty.Engine;
 
 public interface IWorld
 {

@@ -1,7 +1,7 @@
-using engine;
+using Hefty.Engine;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
-namespace components;
+namespace Hefty.Examples.Components;
 
 public class PlayerController(Transform transform) : IUpdater
 {

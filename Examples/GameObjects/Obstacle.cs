@@ -1,6 +1,9 @@
-using engine;
+using Hefty.Engine;
+using Hefty.Engine.Collision;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+
+namespace Hefty.Examples.GameObjects;
 
 public class Obstacle : Sprite
 {

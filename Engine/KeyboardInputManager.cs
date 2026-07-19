@@ -1,8 +1,7 @@
-namespace engine;
-
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
+namespace Hefty.Engine;
 
 public class KeyboardInputManager : IUpdater
 {

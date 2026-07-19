@@ -5,10 +5,10 @@
     "version": "0.2.0",
     "configurations": [
       {
-        "name": "C#: gameEngine Debug",
+        "name": "C#: Hefty Debug",
         "type": "dotnet",
         "request": "launch",
-        "projectPath": "${workspaceFolder}/gameEngine.csproj"
+        "projectPath": "${workspaceFolder}/Hefty.csproj"
       }
     ],
   }

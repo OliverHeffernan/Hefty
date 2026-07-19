@@ -1,10 +1,10 @@
-using engine;
+using Hefty.Engine;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using textures;
+using Hefty.Examples.Textures;
 
-namespace worlds;
+namespace Hefty.Examples.Worlds;
 
 /// <summary>A minimal screen-space world. Press Enter to load the playable world.</summary>
 public class MainMenu : IWorld

@@ -2,7 +2,7 @@ using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace textures;
+namespace Hefty.Examples.Textures;
 
 public static class TextureFactory
 {

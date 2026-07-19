@@ -1,8 +1,8 @@
 using System;
-using engine;
+using Hefty.Engine;
 using Microsoft.Xna.Framework;
 
-namespace components;
+namespace Hefty.Examples.Components;
 
 public class CameraFollow : IUpdater
 {
