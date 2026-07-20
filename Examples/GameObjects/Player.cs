@@ -1,6 +1,6 @@
 using Hefty.Engine;
-using Hefty.Examples.Components;
 using Hefty.Engine.Collision;
+using Hefty.Examples.Components;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -12,15 +12,18 @@ public class Player : Sprite
         : base(texture, new Transform(), new Vector2(50f, 50f))
     {
         AddComponent(new PlayerController(Transform));
-		Collider col = new(Transform, new Vector2(50f, 50f), new Vector2(0f, 0f));
-		col.OnCollisionEnter = other => {
-			System.Console.Write("enter ");
-			Color = Color.Red;
+        Collider col = new(Transform, new(50f, 50f), Vector2.Zero)
+		{
+			OnCollisionEnter = _ =>
+			{
+				System.Console.Write("enter ");
+				Color = Color.Red;
+			},
+			OnCollisionExit = _ =>
+			{
+				System.Console.Write("exit ");
+				Color = Color.White;
+			}
 		};
-		col.OnCollisionExit = other => {
-			System.Console.Write("exit ");
-			Color = Color.White;
-		};
-
     }
 }

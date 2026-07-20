@@ -29,8 +29,6 @@ public class Game1 : Game
 
     public void Instantiate(GameObject gameObject, RenderSpace renderSpace = RenderSpace.World)
     {
-        ArgumentNullException.ThrowIfNull(gameObject);
-
         if (gameObject is IUpdater updater)
             updaters.Add(updater);
 

@@ -3,20 +3,12 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Hefty.Engine;
 
-public class Sprite : GameObject, IDrawable
+public class Sprite(Texture2D image, Transform transform, Vector2 size) : GameObject, IDrawable
 {
-    // Store the image of the sprite.
-    private readonly Texture2D image;
-    public Transform Transform { get; }
-    private readonly Vector2 size;
-	public Color Color { get; set; } = Color.White;
-
-    public Sprite(Texture2D image, Transform transform, Vector2 size)
-    {
-        this.image = image;
-        Transform = transform;
-        this.size = size;
-    }
+    private readonly Texture2D image = image;
+    public Transform Transform { get; } = transform;
+    private readonly Vector2 size = size;
+    public Color Color { get; set; } = Color.White;
 
     public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
     {
@@ -28,8 +20,7 @@ public class Sprite : GameObject, IDrawable
                 (int)(size.X * Transform.Scale.X),
                 (int)(size.Y * Transform.Scale.Y)
             ),
-			Color
+            Color
         );
     }
-
 }
