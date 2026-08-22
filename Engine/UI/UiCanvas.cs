@@ -39,8 +39,12 @@ public sealed class UiCanvas : GameObject, IDrawable
         ArgumentNullException.ThrowIfNull(element);
         if (element.Parent is not null)
             throw new InvalidOperationException("Remove the element from its parent before adding it to a canvas.");
-        if (!children.Contains(element))
-            children.Add(element);
+        if (children.Contains(element))
+            return;
+        if (element.OwnerCanvas is not null)
+            throw new InvalidOperationException("Remove the UI element from its canvas before adding it elsewhere.");
+        element.AttachToCanvas(this);
+        children.Add(element);
     }
 
     public bool Remove(UiElement element)
@@ -50,6 +54,8 @@ public sealed class UiCanvas : GameObject, IDrawable
             || IsInSubtree(element, hovered)
             || IsInSubtree(element, pressed)))
             ClearTransient(element);
+        if (removed)
+            element.DetachFromCanvas(this);
         return removed;
     }
 
@@ -97,8 +103,13 @@ public sealed class UiCanvas : GameObject, IDrawable
 
         if (input.IsPressed(NextAction)) MoveFocus(1);
         else if (input.IsPressed(PreviousAction)) MoveFocus(-1);
-        if (focused is not null && input.IsPressed(ConfirmAction))
-            focused.Activate();
+        if (input.IsPressed(ConfirmAction))
+        {
+            if (IsFocusableAndInteractive(focused))
+                focused.Activate();
+            else
+                SetFocus(null);
+        }
 
         for (int i = 0; i < children.Count; i++)
             children[i].UpdateTree(gameTime);
@@ -141,5 +152,17 @@ public sealed class UiCanvas : GameObject, IDrawable
             if (ReferenceEquals(current, root))
                 return true;
         return false;
+    }
+
+    private bool IsFocusableAndInteractive(UiElement element)
+    {
+        if (element is null || !focusable.Contains(element)
+            || !ReferenceEquals(element.OwnerCanvas, this))
+            return false;
+
+        for (UiElement current = element; current is not null; current = current.Parent)
+            if (!current.Visible || !current.Enabled)
+                return false;
+        return true;
     }
 }

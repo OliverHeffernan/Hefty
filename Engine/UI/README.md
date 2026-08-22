@@ -10,6 +10,9 @@ game.Instantiate(canvas, RenderSpace.Screen);
 
 Children draw in insertion order (later children are on top) and hit testing uses the reverse order. `UiElement.AddChild` creates nested layouts. `Position` is an offset from `Anchor`; the element's matching point is attached to that anchor. For example, `Anchor.BottomRight` with position `(-20, -20)` stays 20 pixels from the viewport or parent bottom-right when resized.
 
+An element tree can belong to only one canvas. Remove a root with `UiCanvas.Remove` (or a child
+with `RemoveChild`) before adding it to another canvas or reparenting it.
+
 Buttons support hover, focus, disabled visuals, and `Activated`. Focus order is deterministic depth-first insertion order. Mouse edges activate the topmost hit button. The configurable canvas actions default to `UiConfirm`, `UiNext`, and `UiPrevious`.
 
 ## Input adapter

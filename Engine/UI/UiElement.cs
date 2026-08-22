@@ -42,6 +42,7 @@ public abstract class UiElement
     public bool IsFocused { get; internal set; }
     public virtual bool IsFocusable => false;
     public UiElement Parent { get; private set; }
+    internal UiCanvas OwnerCanvas { get; private set; }
     public IReadOnlyList<UiElement> Children => children;
     public Rectangle Bounds { get; private set; }
 
@@ -50,17 +51,41 @@ public abstract class UiElement
         ArgumentNullException.ThrowIfNull(child);
         if (child == this || IsAncestorOf(child))
             throw new InvalidOperationException("A UI element cannot contain itself or an ancestor.");
+        if (child.OwnerCanvas is not null)
+            throw new InvalidOperationException("Remove a UI element from its canvas before reparenting it.");
         child.Parent?.RemoveChild(child);
         child.Parent = this;
         children.Add(child);
+        if (OwnerCanvas is not null)
+            child.AttachToCanvas(OwnerCanvas);
     }
 
     public bool RemoveChild(UiElement child)
     {
         if (!children.Remove(child))
             return false;
+        if (OwnerCanvas is not null)
+            child.DetachFromCanvas(OwnerCanvas);
         child.Parent = null;
         return true;
+    }
+
+    internal void AttachToCanvas(UiCanvas canvas)
+    {
+        if (OwnerCanvas is not null && !ReferenceEquals(OwnerCanvas, canvas))
+            throw new InvalidOperationException("A UI element cannot belong to multiple canvases.");
+        OwnerCanvas = canvas;
+        for (int i = 0; i < children.Count; i++)
+            children[i].AttachToCanvas(canvas);
+    }
+
+    internal void DetachFromCanvas(UiCanvas canvas)
+    {
+        if (!ReferenceEquals(OwnerCanvas, canvas))
+            return;
+        OwnerCanvas = null;
+        for (int i = 0; i < children.Count; i++)
+            children[i].DetachFromCanvas(canvas);
     }
 
     internal void Layout(Rectangle parentBounds)
