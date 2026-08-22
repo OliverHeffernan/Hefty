@@ -60,13 +60,16 @@ public sealed class SpriteAnimator : Component
         if (elapsedSeconds <= 0)
             return;
 
-        double frameDuration = 1.0 / currentClip.FramesPerSecond;
         elapsedInFrame += elapsedSeconds;
-        long framesElapsed = (long)(elapsedInFrame / frameDuration);
+        // Accumulate progress in frames rather than dividing by a duration. The small
+        // tolerance prevents values such as 0.3 * 10 being treated as 2.999999999...
+        // at an exact frame boundary.
+        double frameProgress = elapsedInFrame * currentClip.FramesPerSecond;
+        long framesElapsed = (long)Math.Floor(frameProgress + 1e-9);
         if (framesElapsed == 0)
             return;
 
-        elapsedInFrame -= framesElapsed * frameDuration;
+        elapsedInFrame = (frameProgress - framesElapsed) / currentClip.FramesPerSecond;
         if (currentClip.Loop)
         {
             FrameIndex = (int)((FrameIndex + framesElapsed) % currentClip.FrameCount);
