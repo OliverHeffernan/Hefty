@@ -90,10 +90,14 @@ public sealed class InputManager : Component
     {
         ArgumentNullException.ThrowIfNull(binding);
         ActionState action = GetOrCreateAction(actionName);
-        if (!action.Bindings.Contains(binding))
-            action.Bindings.Add(binding);
+        if (action.Bindings.Contains(binding))
+            return;
+
+        bool wasHeld = action.Current;
+        action.Bindings.Add(binding);
         action.Current = IsAnyBindingDown(action.Bindings);
-        action.Previous = action.Current;
+        if (!wasHeld && action.Current)
+            action.Previous = true;
     }
 
     public bool Unbind(string actionName, IInputBinding binding)
