@@ -9,6 +9,7 @@ public class Sprite(Texture2D image, Transform transform, Vector2 size) : GameOb
     public Transform Transform { get; } = transform;
     private readonly Vector2 size = size;
     public Color Color { get; set; } = Color.White;
+    public Rectangle? SourceRectangle { get; set; }
 
     public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
     {
@@ -20,6 +21,7 @@ public class Sprite(Texture2D image, Transform transform, Vector2 size) : GameOb
                 (int)(size.X * Transform.Scale.X),
                 (int)(size.Y * Transform.Scale.Y)
             ),
+            SourceRectangle,
             Color
         );
     }
