@@ -17,4 +17,6 @@ Asset names are content-pipeline names (without file extensions), not filesystem
 
 `MasterVolume`, `MusicVolume`, and `SfxVolume` accept finite values and clamp them to 0–1. Changes apply immediately to music and tracked SFX instances. `StopMusic` only stops music. Unknown IDs, wrong audio kinds, pre-initialization calls, and load/playback failures do not throw; inspect `LastDiagnostic` or subscribe to `Diagnostic`.
 
+Call `Update` once per game frame to release completed SFX instances. It is safe to call before initialization.
+
 Call `Dispose` when the game shuts down. The manager disposes only the `SoundEffectInstance` objects it creates and never unloads or disposes the caller's `ContentManager` or its cached assets. A disposed singleton cannot be reinitialized.

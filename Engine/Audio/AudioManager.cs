@@ -93,6 +93,13 @@ public sealed class AudioManager : IDisposable
         }
     }
 
+    /// <summary>Prunes completed sound-effect instances. Call once per game frame.</summary>
+    public void Update()
+    {
+        if (!disposed)
+            PruneFinishedSfx();
+    }
+
     public void PlayMusic(string id, bool loop)
     {
         if (!TryResolve(id, AudioKind.Music, out AudioCatalogEntry entry))
@@ -217,7 +224,10 @@ public sealed class AudioManager : IDisposable
     }
 
     private static bool IsPlaybackException(Exception exception) =>
-        exception is ContentLoadException or InvalidOperationException or ArgumentException;
+        exception is ContentLoadException
+            or InvalidOperationException
+            or ArgumentException
+            or NoAudioHardwareException;
 
     private void Report(string message)
     {
