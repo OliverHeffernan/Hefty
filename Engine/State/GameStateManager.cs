@@ -40,6 +40,7 @@ public sealed class GameStateManager
     private readonly Dictionary<string, IGameStateContributor> _contributors =
         new(StringComparer.Ordinal);
     private readonly JsonSerializerOptions _serializerOptions;
+    private readonly JsonSerializerOptions _contributorSerializerOptions;
 
     public string SaveDirectory { get; }
 
@@ -49,9 +50,15 @@ public sealed class GameStateManager
         JsonSerializerOptions? serializerOptions = null)
     {
         SaveDirectory = Path.GetFullPath(saveDirectory ?? GetDefaultSaveDirectory());
-        _serializerOptions = serializerOptions is null
+        _contributorSerializerOptions = serializerOptions is null
             ? new JsonSerializerOptions { WriteIndented = true }
             : new JsonSerializerOptions(serializerOptions);
+        _serializerOptions = new JsonSerializerOptions(_contributorSerializerOptions)
+        {
+            // Slice names are stable identifiers. A caller's dictionary naming policy must
+            // not rewrite them in the save envelope.
+            DictionaryKeyPolicy = null
+        };
 
         foreach (var contributor in contributors ?? [])
             Register(contributor);
@@ -78,7 +85,7 @@ public sealed class GameStateManager
         try
         {
             foreach (var (name, contributor) in _contributors)
-                state.Slices[name] = contributor.WriteState(_serializerOptions).Clone();
+                state.Slices[name] = contributor.WriteState(_contributorSerializerOptions).Clone();
         }
         catch (Exception exception)
         {
@@ -141,7 +148,7 @@ public sealed class GameStateManager
         try
         {
             foreach (var (name, contributor) in _contributors)
-                contributor.ReadState(state.Slices[name], _serializerOptions);
+                contributor.ReadState(state.Slices[name], _contributorSerializerOptions);
         }
         catch (Exception exception)
         {
