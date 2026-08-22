@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework;
 
 namespace Hefty.Engine.Collision;
 
-public class Collider
+public class Collider : IDestroyable
 {
     private static long nextId;
     private uint layer;
@@ -59,27 +59,20 @@ public class Collider
 
     public bool Intersects(Collider other)
     {
-		return GetBounds().Intersects(other.GetBounds());
+		ArgumentNullException.ThrowIfNull(other);
+		return GetFloatBounds().StrictlyOverlaps(other.GetFloatBounds());
     }
 	
-	public Rectangle GetBounds()
-	{
-		float left = Transform.Position.X + Offset.X;
-		float top = Transform.Position.Y + Offset.Y;
-		float right = left + Size.X;
-		float bottom = top + Size.Y;
-		int x = (int)MathF.Floor(left);
-		int y = (int)MathF.Floor(top);
-		int maximumX = (int)MathF.Ceiling(right);
-		int maximumY = (int)MathF.Ceiling(bottom);
+    public Rectangle GetBounds() => GetFloatBounds().ToRectangle();
 
-		return new Rectangle(
-			x,
-			y,
-			Math.Max(1, maximumX - x),
-			Math.Max(1, maximumY - y)
-		);
-	}
+    internal Aabb GetFloatBounds() => new(
+        Transform.Position.X + Offset.X,
+        Transform.Position.Y + Offset.Y,
+        Transform.Position.X + Offset.X + Size.X,
+        Transform.Position.Y + Offset.Y + Size.Y);
+
+    public void CleanUp() => CollisionManager.UnregisterCollider(this);
+    public void Destroy() => CleanUp();
 
 	private static bool IsFinite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
 

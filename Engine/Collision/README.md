@@ -1,17 +1,15 @@
-# Event-only collision
+# Collision and kinematic response
 
-Creating a `Collider` registers it with `CollisionManager`. Colliders expose `OnCollisionEnter`, `OnCollisionStay`, and `OnCollisionExit`; the manager reports events but never changes transforms or resolves penetration. `IsTrigger` records gameplay intent and, like every collider, never blocks movement.
+`Collider` remains a floating-point axis-aligned shape, layer/mask filter, and enter/stay/exit event source. Raw colliders are event-only. A trigger (`IsTrigger = true`) reports events but never blocks motion.
+
+Solid response is opt-in through `PhysicsBody`, which is also an engine `Component`. A body owns a shared `Transform` and one or more colliders and is either `Static` or `Kinematic`. Static bodies are immovable obstacles. Controllers call `kinematic.Move(displacement)` (or set `Velocity`); they must not directly move its transform during gameplay. Add bodies with `GameObject.AddComponent` for automatic cleanup, or call `Destroy` explicitly when managing them separately.
 
 ```csharp
-Collider hitbox = new(transform, new Vector2(32, 48), Vector2.Zero,
-    layer: 1u << 0, collisionMask: (1u << 1), isTrigger: true);
-hitbox.OnCollisionEnter = other => HandleEnter(other);
-hitbox.OnCollisionStay = other => HandleStay(other);
-hitbox.OnCollisionExit = other => HandleExit(other);
+Collider shape = new(transform, new Vector2(32, 48), Vector2.Zero);
+PhysicsBody body = new(transform, BodyType.Kinematic, shape);
+body.Move(inputDirection * speed * deltaSeconds);
 ```
 
-`Layer` must be exactly one non-zero bit. Two colliders interact only when each collider's `CollisionMask` includes the other's layer; a zero mask intentionally disables all interactions. Size must be finite and positive, and offset must be finite.
+Each frame, `Game1` updates input and gameplay components first. It then calls `CollisionManager.Step`: pending kinematic motion is swept against filtered, non-trigger static bodies using floating-point AABBs, up to four deterministic impacts are resolved, and remaining tangential motion slides along surfaces. A small contact skin stabilizes resting contact. Events are dispatched afterward from final/touching state, with swept detection retaining fast trigger/event crossings.
 
-The broadphase places bounds in every occupied 100-pixel grid cell, including negative cells, and canonicalizes candidates so callbacks are not duplicated. Bounds conservatively floor their minimum and ceil their maximum, so fractional sizes remain collidable. Previous-to-current swept AABB checks catch straightforward fast crossings. This is not continuous physics: curved motion, rotation, and multiple impacts within one frame are not modeled.
-
-Call `UnregisterCollider` when an object is removed. `ClearColliders` is suitable for world teardown. Both produce one exit transition for active pairs and are safe to call from collision callbacks; mutations are deferred until both participants receive the current callback. A nested `CheckCollisions` call from a callback is ignored until the next game frame.
+`Layer` is one non-zero bit and both masks must permit a pair. `GetBounds()` provides a conservative integer rectangle for legacy/query uses; response uses floating-point bounds internally. `ClearColliders` clears bodies, colliders, and contact state during world changes. No gravity, dynamic rigid bodies, rotation, friction, or restitution is implemented.

@@ -11,6 +11,7 @@ public class Obstacle : Sprite
 		: base(texture, new Transform(), new Vector2(50f, 50f))
 	{
 		Color = Color.Red;
-		new Collider(Transform, new Vector2(50f, 50f), new Vector2(0f, 0f));
+		Collider collider = new(Transform, new Vector2(50f, 50f), Vector2.Zero);
+		AddComponent(new PhysicsBody(Transform, BodyType.Static, collider));
 	}
 }

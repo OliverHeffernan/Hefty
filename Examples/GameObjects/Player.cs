@@ -11,7 +11,6 @@ public class Player : Sprite
     public Player(Texture2D texture)
         : base(texture, new Transform(), new Vector2(50f, 50f))
     {
-        AddComponent(new PlayerController(Transform));
         Collider col = new(Transform, new(50f, 50f), Vector2.Zero)
 		{
 			OnCollisionEnter = _ =>
@@ -25,5 +24,8 @@ public class Player : Sprite
 				Color = Color.White;
 			}
 		};
+        PhysicsBody body = new(Transform, BodyType.Kinematic, col);
+        AddComponent(body);
+        AddComponent(new PlayerController(body));
     }
 }

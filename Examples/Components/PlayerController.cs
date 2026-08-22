@@ -1,11 +1,12 @@
 using Hefty.Engine;
+using Hefty.Engine.Collision;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 namespace Hefty.Examples.Components;
 
-public class PlayerController(Transform transform) : Component
+public class PlayerController(PhysicsBody body) : Component
 {
-	private Transform Transform { get; } = transform;
+	private PhysicsBody Body { get; } = body;
 	private readonly KeyboardInputManager keyboardInputManager = KeyboardInputManager.Instance();
 
 	public override void Update(GameTime gameTime)
@@ -33,7 +34,7 @@ public class PlayerController(Transform transform) : Component
 		if (movement != Vector2.Zero)
 		{
 			movement.Normalize();
-			Transform.Position += movement * speed * (float)gameTime.ElapsedGameTime.TotalSeconds;
+			Body.Move(movement * speed * (float)gameTime.ElapsedGameTime.TotalSeconds);
 		}
 	}
 }

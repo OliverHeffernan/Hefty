@@ -24,6 +24,7 @@ public class Game1 : Game
         graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
+        IsFixedTimeStep = true;
     }
 
     public void Instantiate(GameObject gameObject, RenderSpace renderSpace = RenderSpace.World)
@@ -70,8 +71,6 @@ public class Game1 : Game
 
         KeyboardInputManager keyboard = KeyboardInputManager.Instance();
         keyboard.Update(gameTime);
-		CollisionManager.CheckCollisions();
-
         if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed
             || keyboard.IsKeyDown(Keys.Escape))
         {
@@ -80,6 +79,8 @@ public class Game1 : Game
 
         foreach (IUpdater updater in updaters)
             updater.Update(gameTime);
+
+        CollisionManager.Step((float)gameTime.ElapsedGameTime.TotalSeconds);
 
         ApplyPendingWorld();
         base.Update(gameTime);
@@ -110,6 +111,7 @@ public class Game1 : Game
         activeWorld?.Unload(this);
         activeWorld = null;
         pendingWorld = null;
+        CollisionManager.ClearColliders();
         ClearScene();
         spriteBatch?.Dispose();
         base.UnloadContent();
