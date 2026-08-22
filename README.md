@@ -1,6 +1,6 @@
 # Hefty
 
-A small 2D game-engine prototype built in C# with [MonoGame](https://monogame.net/). The project demonstrates a component-based update loop, world switching, sprites, camera tracking, keyboard input, and broad-phase collision detection.
+A small 2D game-engine prototype built in C# with [MonoGame](https://monogame.net/). The project demonstrates a component-based update loop, world switching, sprites, camera tracking, keyboard input, and broad-phase collision detection and response.
 
 All engine implementation files are contained in `Engine/` under the `Hefty.Engine` namespace. The files under `Examples/` are test and demonstration code; they are not part of the engine itself.
 
@@ -11,15 +11,15 @@ All engine implementation files are contained in `Engine/` under the `Hefty.Engi
 - 2D camera with zoom, rotation, bounds, and coordinate conversion
 - Smooth camera-follow component
 - Keyboard input with held and just-pressed key states
-- Grid-based broad-phase collision detection
-- Collision enter and exit callbacks
+- Swept AABB kinematic collision response with stable wall sliding
+- Layered collision enter/stay/exit callbacks and non-blocking triggers
 - Switchable worlds with initialization and cleanup hooks
 - MonoGame content pipeline support
 
 ## Engine systems
 
 - **Input:** [`Engine/Input/README.md`](Engine/Input/README.md) documents named keyboard/mouse actions and `IsPressed`, `IsHeld`, and `IsReleased` frame semantics. The existing `KeyboardInputManager` API remains compatible.
-- **Collision:** [`Engine/Collision/README.md`](Engine/Collision/README.md) documents layer/mask filtering, triggers, enter/stay/exit events, grid broadphase behavior, and swept AABB coverage. Collision is event-only and does not resolve movement.
+- **Collision:** [`Engine/Collision/README.md`](Engine/Collision/README.md) documents static/kinematic bodies, movement intent, layer/mask filtering, non-blocking triggers, events, and the gameplay-then-physics update order.
 
 ## Requirements
 

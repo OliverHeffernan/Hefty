@@ -27,7 +27,10 @@ public class GameObject(params IUpdater[] components) : IUpdater, IComparable, I
 	}
 	public void AddComponent(IUpdater component) {
 		components.Add(component);
+		if (component is IDestroyable destroyable)
+			cleanup.Add(destroyable);
 	}
+	public void AddCleanup(IDestroyable resource) => cleanup.Add(resource);
 	public virtual void Draw(SpriteBatch spriteBatch, GameTime gameTime) { }
 
 	public void Destroy()
