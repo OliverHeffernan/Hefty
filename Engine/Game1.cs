@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -14,9 +13,9 @@ public class Game1 : Game
     private SpriteBatch spriteBatch;
     private IWorld activeWorld;
     private IWorld pendingWorld;
-    private readonly List<IUpdater> updaters = [];
-    private readonly List<IDrawable> worldDrawables = [];
-    private readonly List<IDrawable> screenDrawables = [];
+    private readonly SortedList<IUpdater> updaters = new();
+    private readonly SortedList<IDrawable> worldDrawables = new();
+    private readonly SortedList<IDrawable> screenDrawables = new();
     private Camera2D activeCamera;
 
     public Game1(IWorld startupWorld)
@@ -30,14 +29,14 @@ public class Game1 : Game
     public void Instantiate(GameObject gameObject, RenderSpace renderSpace = RenderSpace.World)
     {
         if (gameObject is IUpdater updater)
-            updaters.Add(updater);
+            updaters.QueueAdd(updater);
 
         if (gameObject is IDrawable drawable)
         {
             if (renderSpace == RenderSpace.World)
-                worldDrawables.Add(drawable);
+                worldDrawables.QueueAdd(drawable);
             else
-                screenDrawables.Add(drawable);
+                screenDrawables.QueueAdd(drawable);
         }
     }
 
@@ -65,6 +64,10 @@ public class Game1 : Game
 
     protected override void Update(GameTime gameTime)
     {
+		updaters.ApplyQueues();
+		worldDrawables.ApplyQueues();
+		screenDrawables.ApplyQueues();
+
         KeyboardInputManager keyboard = KeyboardInputManager.Instance();
         keyboard.Update(gameTime);
 		CollisionManager.CheckCollisions();

@@ -59,9 +59,9 @@ public class LevelOne : IWorld
         playerTexture = null;
     }
 
-    private sealed class OpenMenu(Game1 game) : IUpdater
+    private sealed class OpenMenu(Game1 game) : Component
     {
-        public void Update(GameTime gameTime)
+        public override void Update(GameTime gameTime)
         {
             if (KeyboardInputManager.Instance().IsKeyPressed(Keys.M))
                 game.LoadWorld(new MainMenu());

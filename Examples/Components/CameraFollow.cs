@@ -1,20 +1,15 @@
-using System;
 using Hefty.Engine;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using System;
 
 namespace Hefty.Examples.Components;
 
-public class CameraFollow : IUpdater
+public class CameraFollow(Camera2D camera, Transform target) : Component
 {
-    private readonly Camera2D camera;
-    private readonly Transform target;
+    private readonly Camera2D camera = camera ?? throw new ArgumentNullException(nameof(camera));
+    private readonly Transform target = target ?? throw new ArgumentNullException(nameof(target));
     private float smoothing;
-
-    public CameraFollow(Camera2D camera, Transform target)
-    {
-        this.camera = camera ?? throw new ArgumentNullException(nameof(camera));
-        this.target = target ?? throw new ArgumentNullException(nameof(target));
-    }
 
     public Vector2 Offset { get; set; }
 
@@ -32,7 +27,7 @@ public class CameraFollow : IUpdater
 
     public bool Enabled { get; set; } = true;
 
-    public void Update(GameTime gameTime)
+    public override void Update(GameTime gameTime)
     {
         if (!Enabled)
             return;
