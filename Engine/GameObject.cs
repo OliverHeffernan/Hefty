@@ -1,10 +1,21 @@
+using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 namespace Hefty.Engine;
-public class GameObject(params IUpdater[] components) : IUpdater
+public class GameObject(params IUpdater[] components) : IUpdater, IComparable, IDestroyable
 {
 	private readonly List<IUpdater> components = [..components];
+	private readonly List<IDestroyable> cleanup = [];
+	public bool ToDestroy { get; private set; } = false;
+
+	public int Priority { get; set; } = 0;
+	public int CompareTo(object obj) {
+		if (obj is GameObject other) {
+			return Priority.CompareTo(other.Priority);
+		}
+		throw new ArgumentException("Object is not a GameObject");
+	}
 
 	/**
 	 * Updates all components in the updater.
@@ -18,4 +29,18 @@ public class GameObject(params IUpdater[] components) : IUpdater
 		components.Add(component);
 	}
 	public virtual void Draw(SpriteBatch spriteBatch, GameTime gameTime) { }
+
+	public void Destroy()
+	{
+		CleanUp();
+		ToDestroy = true;
+	}
+
+	public void CleanUp()
+	{
+		foreach (IDestroyable component in cleanup) {
+			component.Destroy();
+		}
+		cleanup.Clear();
+	}
 }

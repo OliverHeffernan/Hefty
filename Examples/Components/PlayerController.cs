@@ -3,12 +3,12 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 namespace Hefty.Examples.Components;
 
-public class PlayerController(Transform transform) : IUpdater
+public class PlayerController(Transform transform) : Component
 {
 	private Transform Transform { get; } = transform;
 	private readonly KeyboardInputManager keyboardInputManager = KeyboardInputManager.Instance();
 
-	public void Update(GameTime gameTime)
+	public override void Update(GameTime gameTime)
 	{
 		float speed = 200f;
 		Vector2 movement = Vector2.Zero;

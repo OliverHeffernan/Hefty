@@ -25,9 +25,9 @@ public class MainMenu : IWorld
         panelTexture = null;
     }
 
-    private sealed class StartLevel(Game1 game) : IUpdater
+    private sealed class StartLevel(Game1 game) : Component
     {
-        public void Update(GameTime gameTime)
+        public override void Update(GameTime gameTime)
         {
             if (KeyboardInputManager.Instance().IsKeyPressed(Keys.Enter))
                 game.LoadWorld(new LevelOne());

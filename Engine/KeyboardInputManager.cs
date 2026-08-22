@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework.Input;
 
 namespace Hefty.Engine;
 
-public class KeyboardInputManager : IUpdater
+public class KeyboardInputManager : Component
 {
 	private KeyboardState previous;
 	private KeyboardState current;
@@ -19,7 +19,8 @@ public class KeyboardInputManager : IUpdater
 		previous = Keyboard.GetState();
 		current = Keyboard.GetState();
 	}
-	public void Update(GameTime gameTime)
+	
+	public override void Update(GameTime gameTime)
 	{
 		previous = current;
 		current = Keyboard.GetState();
