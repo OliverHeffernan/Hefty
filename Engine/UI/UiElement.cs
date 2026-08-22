@@ -65,7 +65,10 @@ public abstract class UiElement
         if (!children.Remove(child))
             return false;
         if (OwnerCanvas is not null)
+        {
+            OwnerCanvas.ClearTransient(child);
             child.DetachFromCanvas(OwnerCanvas);
+        }
         child.Parent = null;
         return true;
     }

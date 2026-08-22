@@ -139,7 +139,7 @@ public sealed class UiCanvas : GameObject, IDrawable
         if (focused is not null) focused.IsFocused = true;
     }
 
-    private void ClearTransient(UiElement element)
+    internal void ClearTransient(UiElement element)
     {
         if (IsInSubtree(element, focused)) SetFocus(null);
         if (IsInSubtree(element, hovered)) SetHovered(null);
