@@ -56,6 +56,16 @@ public sealed class InputManager : Component
 
     public static InputManager Instance() => instance ??= new InputManager();
 
+    public Point MousePosition => currentMouse.Position;
+
+    public bool IsMouseButtonPressed(MouseButton button) =>
+        IsMouseButtonDown(currentMouse, button) && !IsMouseButtonDown(previousMouse, button);
+
+    public bool IsMouseButtonReleased(MouseButton button) =>
+        !IsMouseButtonDown(currentMouse, button) && IsMouseButtonDown(previousMouse, button);
+
+    public bool IsMouseButtonDown(MouseButton button) => IsMouseButtonDown(currentMouse, button);
+
     private InputManager()
     {
         currentKeyboard = previousKeyboard = Keyboard.GetState();
@@ -123,6 +133,16 @@ public sealed class InputManager : Component
                 return true;
         return false;
     }
+
+    private static bool IsMouseButtonDown(MouseState state, MouseButton button) => button switch
+    {
+        MouseButton.Left => state.LeftButton == ButtonState.Pressed,
+        MouseButton.Middle => state.MiddleButton == ButtonState.Pressed,
+        MouseButton.Right => state.RightButton == ButtonState.Pressed,
+        MouseButton.XButton1 => state.XButton1 == ButtonState.Pressed,
+        MouseButton.XButton2 => state.XButton2 == ButtonState.Pressed,
+        _ => false
+    };
 
     private ActionState GetOrCreateAction(string actionName)
     {

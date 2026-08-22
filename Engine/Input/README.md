@@ -17,6 +17,9 @@ if (input.IsReleased("Jump")) { /* first frame all bindings are up */ }
 
 Bindings can be changed with `Unbind`, `RemoveAction`, and `ClearActions`. Action names must not be null, empty, or whitespace. Binding an input that is already held initializes the action as held rather than generating a false press.
 
+The raw mouse snapshot is available through `MousePosition`, `IsMouseButtonDown`,
+`IsMouseButtonPressed`, and `IsMouseButtonReleased`, which is useful for screen-space UI hit testing.
+
 `KeyboardInputManager` remains available as a compatibility shim. Its existing `IsKeyPressed`, `IsKeyReleased`, `IsKeyDown`, and `IsKeyUp` methods use the same per-frame snapshot.
 
 Input is updated before collision checks and game-object updaters. Call `Update` exactly once per frame if using `InputManager` outside `Game1`.

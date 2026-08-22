@@ -25,6 +25,7 @@ public static class CollisionManager
     private static readonly HashSet<Collider> pendingUnregister = [];
     private static bool pendingClear;
     private static int callbackDepth;
+    private static bool isChecking;
 
     public static void RegisterCollider(Collider collider)
     {
@@ -56,6 +57,22 @@ public static class CollisionManager
     }
 
     public static void CheckCollisions()
+    {
+        if (isChecking)
+            return;
+
+        isChecking = true;
+        try
+        {
+            CheckCollisionsCore();
+        }
+        finally
+        {
+            isChecking = false;
+        }
+    }
+
+    private static void CheckCollisionsCore()
     {
         Collider[] snapshot = [.. colliders];
         Dictionary<(int, int), List<Collider>> grid = FormGrid(snapshot);

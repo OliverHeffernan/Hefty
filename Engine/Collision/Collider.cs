@@ -64,11 +64,20 @@ public class Collider
 	
 	public Rectangle GetBounds()
 	{
+		float left = Transform.Position.X + Offset.X;
+		float top = Transform.Position.Y + Offset.Y;
+		float right = left + Size.X;
+		float bottom = top + Size.Y;
+		int x = (int)MathF.Floor(left);
+		int y = (int)MathF.Floor(top);
+		int maximumX = (int)MathF.Ceiling(right);
+		int maximumY = (int)MathF.Ceiling(bottom);
+
 		return new Rectangle(
-			(int)(Transform.Position.X + Offset.X),
-			(int)(Transform.Position.Y + Offset.Y),
-			(int)Size.X,
-			(int)Size.Y
+			x,
+			y,
+			Math.Max(1, maximumX - x),
+			Math.Max(1, maximumY - y)
 		);
 	}
 
