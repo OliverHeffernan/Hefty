@@ -19,14 +19,14 @@ The UI deliberately does not depend on the separate action-input change. `IUiInp
 ```csharp
 IUiInputSource input = new DelegateUiInputSource(
     () => inputManager.MousePosition,
-    () => inputManager.IsMousePressed,
-    () => inputManager.IsMouseHeld,
-    () => inputManager.IsMouseReleased,
+    () => inputManager.IsMouseButtonPressed(MouseButton.Left),
+    () => inputManager.IsMouseButtonDown(MouseButton.Left),
+    () => inputManager.IsMouseButtonReleased(MouseButton.Left),
     inputManager.IsPressed,
     inputManager.IsHeld,
     inputManager.IsReleased);
 ```
 
-Adjust the four mouse delegates to the final A4 mouse member names if they differ; the named-action delegates already match that API. The held/released queries are exposed for custom widgets even though built-in navigation uses press edges.
+The mouse delegates use A4's `InputManager.MousePosition` and left-button edge/state queries; choose another `MouseButton` when needed. The held/released action queries are exposed for custom widgets even though built-in navigation uses press edges.
 
 No fonts or textures are bundled. Supply a `SpriteFont` and a caller-owned texture (normally a 1x1 white texture) to widgets. The UI never creates assets or changes graphics state.

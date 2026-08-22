@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Hefty.Engine.UI;
 
-public sealed class UiCanvas : GameObject
+public sealed class UiCanvas : GameObject, IDrawable
 {
     private sealed class CanvasUpdater(UiCanvas canvas) : IUpdater
     {
@@ -46,7 +46,9 @@ public sealed class UiCanvas : GameObject
     public bool Remove(UiElement element)
     {
         bool removed = children.Remove(element);
-        if (removed && (focused == element || hovered == element || pressed == element))
+        if (removed && (IsInSubtree(element, focused)
+            || IsInSubtree(element, hovered)
+            || IsInSubtree(element, pressed)))
             ClearTransient(element);
         return removed;
     }
@@ -77,6 +79,8 @@ public sealed class UiCanvas : GameObject
             children[i].Layout(screen);
             children[i].CollectFocusable(focusable);
         }
+        if (focused is not null && !focusable.Contains(focused))
+            SetFocus(null);
 
         SetHovered(HitTest(input.MousePosition));
         if (input.IsMousePressed)
@@ -126,8 +130,16 @@ public sealed class UiCanvas : GameObject
 
     private void ClearTransient(UiElement element)
     {
-        if (focused == element) SetFocus(null);
-        if (hovered == element) SetHovered(null);
-        if (pressed == element) pressed = null;
+        if (IsInSubtree(element, focused)) SetFocus(null);
+        if (IsInSubtree(element, hovered)) SetHovered(null);
+        if (IsInSubtree(element, pressed)) pressed = null;
+    }
+
+    private static bool IsInSubtree(UiElement root, UiElement element)
+    {
+        for (UiElement current = element; current is not null; current = current.Parent)
+            if (ReferenceEquals(current, root))
+                return true;
+        return false;
     }
 }
