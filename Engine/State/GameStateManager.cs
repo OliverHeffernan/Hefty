@@ -71,12 +71,14 @@ public sealed class GameStateManager
         ArgumentNullException.ThrowIfNull(state);
         var path = GetSlotPath(slot);
         state.SchemaVersion = SaveGame.CurrentSchemaVersion;
-        state.Slices = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+        state.Slices = state.Slices is null
+            ? new Dictionary<string, JsonElement>(StringComparer.Ordinal)
+            : new Dictionary<string, JsonElement>(state.Slices, StringComparer.Ordinal);
 
         try
         {
             foreach (var (name, contributor) in _contributors)
-                state.Slices.Add(name, contributor.WriteState(_serializerOptions).Clone());
+                state.Slices[name] = contributor.WriteState(_serializerOptions).Clone();
         }
         catch (Exception exception)
         {
@@ -118,11 +120,12 @@ public sealed class GameStateManager
         try
         {
             using var document = JsonDocument.Parse(File.ReadAllText(path));
-            var version = ReadVersion(document.RootElement);
+            var version = ReadVersion(document.RootElement, _serializerOptions);
             var migrated = Migrate(document.RootElement, version);
             state = migrated.Deserialize<SaveGame>(_serializerOptions)
                 ?? throw new JsonException("The save file contained no state.");
             ValidateState(state);
+            ValidateContributorSlices(state);
         }
         catch (GameStateException) { throw; }
         catch (JsonException exception)
@@ -138,8 +141,7 @@ public sealed class GameStateManager
         try
         {
             foreach (var (name, contributor) in _contributors)
-                if (state.Slices.TryGetValue(name, out var slice))
-                    contributor.ReadState(slice, _serializerOptions);
+                contributor.ReadState(state.Slices[name], _serializerOptions);
         }
         catch (Exception exception)
         {
@@ -151,9 +153,17 @@ public sealed class GameStateManager
 
     public SaveGame NewGame()
     {
-        foreach (var contributor in _contributors.Values)
-            contributor.NewGame();
-        return new SaveGame();
+        try
+        {
+            foreach (var contributor in _contributors.Values)
+                contributor.NewGame();
+            return new SaveGame();
+        }
+        catch (Exception exception)
+        {
+            throw new GameStateException(GameStateFailure.Contributor,
+                "A state contributor could not be reset for a new game.", exception);
+        }
     }
 
     public GameStateResult TrySave(string slot, SaveGame state)
@@ -176,10 +186,13 @@ public sealed class GameStateManager
         return Path.Combine(SaveDirectory, slot + SaveExtension);
     }
 
-    private static int ReadVersion(JsonElement root)
+    private static int ReadVersion(JsonElement root, JsonSerializerOptions serializerOptions)
     {
+        string versionName = serializerOptions.PropertyNamingPolicy?.ConvertName(nameof(SaveGame.SchemaVersion))
+            ?? nameof(SaveGame.SchemaVersion);
         if (root.ValueKind != JsonValueKind.Object ||
-            !root.TryGetProperty(nameof(SaveGame.SchemaVersion), out var property) ||
+            (!root.TryGetProperty(versionName, out var property)
+                && !root.TryGetProperty(nameof(SaveGame.SchemaVersion), out property)) ||
             !property.TryGetInt32(out var version))
             throw new GameStateException(GameStateFailure.InvalidData, "The save has no valid schema version.");
         return version;
@@ -196,7 +209,8 @@ public sealed class GameStateManager
 
     private static void ValidateState(SaveGame state)
     {
-        if (state.Player is null || state.Player.Position is null || state.Player.Stats is null ||
+        if (state.SchemaVersion != SaveGame.CurrentSchemaVersion || state.Player is null ||
+            state.Player.Position is null || state.Player.Stats is null ||
             state.Inventory is null || state.World is null || state.Time is null ||
             state.Determinism is null || state.Slices is null || string.IsNullOrWhiteSpace(state.Determinism.Algorithm) ||
             !long.TryParse(state.Determinism.Seed, out _) || state.Time.Day < 1 ||
@@ -205,6 +219,14 @@ public sealed class GameStateManager
 
         if (state.Slices.Keys.Any(name => !IsValidSliceName(name)))
             throw new GameStateException(GameStateFailure.InvalidData, "The save contains an invalid slice name.");
+    }
+
+    private void ValidateContributorSlices(SaveGame state)
+    {
+        foreach (string name in _contributors.Keys)
+            if (!state.Slices.ContainsKey(name))
+                throw new GameStateException(GameStateFailure.InvalidData,
+                    $"The save is missing the state slice '{name}'.");
     }
 
     private static bool IsValidSliceName(string name) =>

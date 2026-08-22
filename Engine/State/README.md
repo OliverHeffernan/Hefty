@@ -16,8 +16,9 @@ GameStateResult result = stateManager.TryLoad("slot-1", out SaveGame? loaded);
 
 Contributors implement `IGameStateContributor` and are registered explicitly; there is no
 reflection-based discovery. Their stable, unique `SliceName` keys JSON owned by that system.
-Unknown slices are preserved when loaded but are replaced on the next save by registered
-contributors.
+Unknown slices are preserved when loaded and on subsequent saves. A registered contributor
+must have a slice in the file; otherwise loading fails explicitly instead of leaving stale
+runtime state in place.
 
 Writes use a temporary file and atomic replacement, so an interrupted or failed write does not
 partially overwrite an existing slot. `Save`/`Load` throw `GameStateException`; callers that do
