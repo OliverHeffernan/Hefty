@@ -16,6 +16,11 @@ All engine implementation files are contained in `Engine/` under the `Hefty.Engi
 - Switchable worlds with initialization and cleanup hooks
 - MonoGame content pipeline support
 
+## Engine systems
+
+- **Input:** [`Engine/Input/README.md`](Engine/Input/README.md) documents named keyboard/mouse actions and `IsPressed`, `IsHeld`, and `IsReleased` frame semantics. The existing `KeyboardInputManager` API remains compatible.
+- **Collision:** [`Engine/Collision/README.md`](Engine/Collision/README.md) documents layer/mask filtering, triggers, enter/stay/exit events, grid broadphase behavior, and swept AABB coverage. Collision is event-only and does not resolve movement.
+
 ## Requirements
 
 - [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)

@@ -1,12 +1,11 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using Hefty.Engine.Input;
 
 namespace Hefty.Engine;
 
 public class KeyboardInputManager : Component
 {
-	private KeyboardState previous;
-	private KeyboardState current;
 	private static KeyboardInputManager instance;
 	public static KeyboardInputManager Instance()
 	{
@@ -16,33 +15,30 @@ public class KeyboardInputManager : Component
 
 	private KeyboardInputManager()
 	{
-		previous = Keyboard.GetState();
-		current = Keyboard.GetState();
 	}
 	
 	public override void Update(GameTime gameTime)
 	{
-		previous = current;
-		current = Keyboard.GetState();
+		InputManager.Instance().Update(gameTime);
 	}
 
 	public bool IsKeyPressed(Keys key)
 	{
-		return current.IsKeyDown(key) && !previous.IsKeyDown(key);
+		return InputManager.Instance().IsKeyPressed(key);
 	}
 
 	public bool IsKeyReleased(Keys key)
 	{
-		return !current.IsKeyDown(key) && previous.IsKeyDown(key);
+		return InputManager.Instance().IsKeyReleased(key);
 	}
 
 	public bool IsKeyDown(Keys key)
 	{
-		return current.IsKeyDown(key);
+		return InputManager.Instance().IsKeyDown(key);
 	}
 
 	public bool IsKeyUp(Keys key)
 	{
-		return !current.IsKeyDown(key);
+		return InputManager.Instance().IsKeyUp(key);
 	}
 }
