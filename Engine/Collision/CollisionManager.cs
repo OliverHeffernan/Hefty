@@ -54,7 +54,7 @@ internal static class CollisionManager
         if (!bodies.Contains(body))
             RegisterBody(body);
 
-        if (bodyByCollider.TryGetValue(collider, out PhysicsBody existingBody)
+        if (bodyByCollider.TryGetValue(collider, out PhysicsBody? existingBody)
             && !ReferenceEquals(existingBody, body))
         {
             throw new InvalidOperationException("A collider cannot belong to multiple physics bodies.");
@@ -80,7 +80,7 @@ internal static class CollisionManager
 
         bodies.Remove(body);
         foreach (Collider collider in body.Colliders)
-            if (bodyByCollider.TryGetValue(collider, out PhysicsBody owner)
+            if (bodyByCollider.TryGetValue(collider, out PhysicsBody? owner)
                 && ReferenceEquals(owner, body))
             {
                 bodyByCollider.Remove(collider);
@@ -175,7 +175,7 @@ internal static class CollisionManager
             float earliestTime = 1f;
             float penetration = 0f;
             Vector2 collisionNormal = Vector2.Zero;
-            Collider hitCollider = null;
+            Collider? hitCollider = null;
             bool startsOverlapping = false;
 
             foreach (Collider movingCollider in body.Colliders)
@@ -257,16 +257,16 @@ internal static class CollisionManager
     }
 
     private static bool IsStaticCollider(Collider collider) =>
-        bodyByCollider.TryGetValue(collider, out PhysicsBody body)
+        bodyByCollider.TryGetValue(collider, out PhysicsBody? body)
         && body.Type == BodyType.Static;
 
     private static bool IsOwnedBySameBody(PhysicsBody body, Collider collider) =>
-        bodyByCollider.TryGetValue(collider, out PhysicsBody owner)
+        bodyByCollider.TryGetValue(collider, out PhysicsBody? owner)
         && ReferenceEquals(owner, body);
 
     private static bool IsOwnedBySameBody(Collider first, Collider second) =>
-        bodyByCollider.TryGetValue(first, out PhysicsBody firstOwner)
-        && bodyByCollider.TryGetValue(second, out PhysicsBody secondOwner)
+        bodyByCollider.TryGetValue(first, out PhysicsBody? firstOwner)
+        && bodyByCollider.TryGetValue(second, out PhysicsBody? secondOwner)
         && ReferenceEquals(firstOwner, secondOwner);
 
     private static IEnumerable<Collider> QueryGrid(
@@ -282,7 +282,7 @@ internal static class CollisionManager
 
         for (int x = minX; x <= maxX; x++)
             for (int y = minY; y <= maxY; y++)
-                if (grid.TryGetValue((x, y), out List<Collider> cell))
+                if (grid.TryGetValue((x, y), out List<Collider>? cell))
                     foreach (Collider collider in cell)
                         result.Add(collider);
 
@@ -306,7 +306,7 @@ internal static class CollisionManager
             for (int x = minX; x <= maxX; x++)
                 for (int y = minY; y <= maxY; y++)
                 {
-                    if (!grid.TryGetValue((x, y), out List<Collider> cell))
+                    if (!grid.TryGetValue((x, y), out List<Collider>? cell))
                         grid[(x, y)] = cell = [];
                     cell.Add(collider);
                 }

@@ -41,8 +41,8 @@ public abstract class UiElement
     public bool IsHovered { get; internal set; }
     public bool IsFocused { get; internal set; }
     public virtual bool IsFocusable => false;
-    public UiElement Parent { get; private set; }
-    internal UiCanvas OwnerCanvas { get; private set; }
+    public UiElement? Parent { get; private set; }
+    internal UiCanvas? OwnerCanvas { get; private set; }
     public IReadOnlyList<UiElement> Children => children;
     public Rectangle Bounds { get; private set; }
 
@@ -122,13 +122,13 @@ public abstract class UiElement
             children[i].DrawTree(spriteBatch, gameTime);
     }
 
-    internal UiElement HitTest(Point point)
+    internal UiElement? HitTest(Point point)
     {
         if (!Visible || !Enabled || !Bounds.Contains(point))
             return null;
         for (int i = children.Count - 1; i >= 0; i--)
         {
-            UiElement hit = children[i].HitTest(point);
+            UiElement? hit = children[i].HitTest(point);
             if (hit is not null)
                 return hit;
         }
@@ -152,7 +152,7 @@ public abstract class UiElement
 
     private bool IsAncestorOf(UiElement candidate)
     {
-        for (UiElement current = Parent; current is not null; current = current.Parent)
+        for (UiElement? current = Parent; current is not null; current = current.Parent)
             if (current == candidate) return true;
         return false;
     }

@@ -21,6 +21,7 @@ All engine implementation files are contained in `Engine/` under the `Hefty.Engi
 - **Core API:** [`Engine/Engine.md`](Engine/Engine.md) documents worlds, game objects, components, rendering, lifecycle, and cleanup.
 - **Input:** [`Engine/Input/Input.md`](Engine/Input/Input.md) documents world-owned keyboard/mouse actions and `IsPressed`, `IsHeld`, and `IsReleased` frame semantics.
 - **Collision:** [`Engine/Collision/Collision.md`](Engine/Collision/Collision.md) documents static/kinematic bodies, movement intent, layer/mask filtering, non-blocking triggers, and collision events.
+- **Textures:** [`Engine/Textures/Textures.md`](Engine/Textures/Textures.md) documents caller-owned blank and checkerboard runtime textures.
 
 ## Requirements
 
@@ -28,22 +29,63 @@ All engine implementation files are contained in `Engine/` under the `Hefty.Engi
 - A platform supported by MonoGame DesktopGL (Windows, macOS, or Linux)
 - Linux users can use [mise](https://mise.jdx.dev/) to install and select the required .NET SDK automatically.
 
-## Getting Started
+## Using the engine package
 
-Clone the repository, restore the local MonoGame tools and dependencies, then run the project:
+Add an exact engine version to a .NET 9 game project:
+
+```bash
+dotnet add package Hefty.Engine --version 0.1.0
+```
+
+The resulting project reference is explicit, so restoring the game continues to use that version until it is deliberately changed:
+
+```xml
+<PackageReference Include="Hefty.Engine" Version="0.1.0" />
+```
+
+To update, run the same command with the desired newer version or edit `Version` in the project file. To roll back, select an earlier version in the same way. Avoid floating versions such as `0.*` when reproducible game builds matter.
+
+Create a world, then pass it to the engine host from the game's entry point:
+
+```csharp
+using Hefty.Engine;
+
+using var game = new HeftyGame(new MainWorld());
+game.Run();
+```
+
+See the [core API guide](Engine/Engine.md) for host configuration and examples of adding worlds, game objects, components, cameras, input, and rendering. Games that use `.mgcb` content should also reference `MonoGame.Content.Builder.Task` at the same MonoGame version used by the engine (`3.8.5.1`).
+
+> `Hefty.Engine` is configured as a NuGet package but has not yet been published. Until it is published, use the local-package flow below.
+
+## Building this repository
+
+Clone the repository, restore the local MonoGame tools and dependencies, then run the sample project:
 
 ```bash
 git clone <repository-url>
 cd Hefty
 dotnet tool restore
-dotnet restore
-dotnet run
+dotnet restore Hefty.sln
+dotnet run --project Hefty.Sample.csproj
 ```
 
-To compile without launching the game:
+To compile the engine and sample without launching the game:
 
 ```bash
-dotnet build
+dotnet build Hefty.sln
+```
+
+To create `Hefty.Engine.0.1.0.nupkg` locally:
+
+```bash
+dotnet pack Engine/Hefty.Engine.csproj --configuration Release --output artifacts/packages
+```
+
+The package version is maintained in `Engine/Hefty.Engine.csproj`. Change its `Version` property before creating a release. To pack and then compile a standalone consumer against only that local package, run:
+
+```bash
+bash scripts/test-package.sh
 ```
 
 ### Linux
@@ -80,11 +122,12 @@ Engine/                 The complete engine implementation (`Hefty.Engine`)
 Examples/
 ├── Components/         Example behaviours used to test the engine
 ├── GameObjects/        Example game objects used to test the engine
-├── Textures/           Example procedural texture helpers
 └── Worlds/             Example scenes that demonstrate the engine
 Content/                MonoGame content-pipeline configuration and assets
 Program.cs              Demonstration application entry point
-Hefty.csproj
+Hefty.Sample.csproj      Executable demonstration project
+Hefty.sln                Engine and sample solution
+tests/Hefty.PackageSmoke Standalone local-package compile check
 ```
 
 ## Engine and Example Code
@@ -109,4 +152,4 @@ Generated content output under `Content/bin` and `Content/obj` is excluded from 
 
 ## Status
 
-This project is an early prototype intended for experimentation and learning. APIs and project structure may change as engine features are developed.
+This project is an early prototype intended for experimentation and learning. APIs and project structure may change as engine features are developed. It is available under the [MIT License](LICENSE).

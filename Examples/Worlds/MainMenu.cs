@@ -1,6 +1,6 @@
 using Hefty.Engine;
 using Hefty.Engine.Input;
-using Hefty.Examples.Textures;
+using Hefty.Engine.Textures;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -10,7 +10,7 @@ namespace Hefty.Examples.Worlds;
 /// <summary>A minimal screen-space world. Press Enter to load the playable world.</summary>
 public sealed class MainMenu : IWorld
 {
-    private Texture2D panelTexture;
+    private Texture2D? panelTexture;
 
     public void Load(WorldContext world)
     {

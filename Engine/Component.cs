@@ -7,16 +7,16 @@ namespace Hefty.Engine;
 /// <summary>Base class for user behavior and rendering attached exclusively to one object.</summary>
 public abstract class Component
 {
-    private GameObject owner;
+    private GameObject? owner;
 
     /// <summary>Gets the owner after attachment.</summary>
     /// <exception cref="InvalidOperationException">The component is not attached to an object.</exception>
     public GameObject Owner => owner ?? throw new InvalidOperationException("The component has no owner.");
-    internal GameObject OwnerInternal => owner;
+    internal GameObject? OwnerInternal => owner;
     /// <summary>Gets the owner's universal transform.</summary>
-    public Transform Transform => Owner?.Transform ?? throw new InvalidOperationException("The component has no owner.");
+    public Transform Transform => Owner.Transform;
     /// <summary>Gets the active world context. Access while detached throws.</summary>
-    public WorldContext World => Owner?.World ?? throw new InvalidOperationException("The component is not in a world.");
+    public WorldContext World => Owner.World;
     /// <summary>Controls update and draw participation.</summary>
     public bool Enabled { get; set; } = true;
     /// <summary>Orders this component's update relative to siblings.</summary>

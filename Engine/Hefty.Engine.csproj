@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>Hefty.Engine</RootNamespace>
+    <AssemblyName>Hefty.Engine</AssemblyName>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <Deterministic>true</Deterministic>
+
+    <PackageId>Hefty.Engine</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Oliver Heffernan</Authors>
+    <Copyright>Copyright © 2026 Oliver Heffernan</Copyright>
+    <Description>A small component-based 2D game engine built on MonoGame DesktopGL.</Description>
+    <PackageTags>game-engine;2d;monogame;csharp</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/OliverHeffernan/Hefty</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/OliverHeffernan/Hefty</PackageProjectUrl>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5.1" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Engine.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
+</Project>

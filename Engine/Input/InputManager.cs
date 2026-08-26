@@ -120,7 +120,7 @@ public sealed class InputManager
     public bool Unbind(string actionName, IInputBinding binding)
     {
         ArgumentNullException.ThrowIfNull(binding);
-        ActionState action = GetAction(actionName);
+        ActionState? action = GetAction(actionName);
         return action is not null && action.Bindings.Remove(binding);
     }
 
@@ -133,7 +133,7 @@ public sealed class InputManager
     /// <summary>Returns whether an action became active during the current frame.</summary>
     public bool IsPressed(string actionName)
     {
-        ActionState action = GetAction(actionName);
+        ActionState? action = GetAction(actionName);
         return action is not null && action.Current && !action.Previous;
     }
 
@@ -143,7 +143,7 @@ public sealed class InputManager
     /// <summary>Returns whether an action became inactive during the current frame.</summary>
     public bool IsReleased(string actionName)
     {
-        ActionState action = GetAction(actionName);
+        ActionState? action = GetAction(actionName);
         return action is not null && !action.Current && action.Previous;
     }
 
@@ -177,14 +177,14 @@ public sealed class InputManager
     private ActionState GetOrCreateAction(string actionName)
     {
         actionName = ValidateActionName(actionName);
-        if (!actions.TryGetValue(actionName, out ActionState action))
+        if (!actions.TryGetValue(actionName, out ActionState? action))
             actions.Add(actionName, action = new ActionState());
         return action;
     }
 
-    private ActionState GetAction(string actionName)
+    private ActionState? GetAction(string actionName)
     {
-        actions.TryGetValue(ValidateActionName(actionName), out ActionState action);
+        actions.TryGetValue(ValidateActionName(actionName), out ActionState? action);
         return action;
     }
 

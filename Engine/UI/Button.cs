@@ -29,7 +29,7 @@ public class Button : UiElement
     public Color FocusedColor { get; set; }
     public Color DisabledColor { get; set; }
     public Color TextColor { get; set; }
-    public event Action<Button> Activated;
+    public event Action<Button>? Activated;
 
     internal override void Activate()
     {

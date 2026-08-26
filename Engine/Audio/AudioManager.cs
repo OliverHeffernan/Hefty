@@ -11,8 +11,8 @@ public sealed class AudioManager : IDisposable
 {
     private static readonly Lazy<AudioManager> lazyInstance = new(() => new AudioManager());
     private readonly List<SoundEffectInstance> activeSfx = new();
-    private ContentManager content;
-    private AudioCatalog catalog;
+    private ContentManager? content;
+    private AudioCatalog? catalog;
     private float masterVolume = 1f;
     private float musicVolume = 1f;
     private float sfxVolume = 1f;
@@ -21,10 +21,10 @@ public sealed class AudioManager : IDisposable
     public static AudioManager Instance => lazyInstance.Value;
 
     /// <summary>Raised for non-fatal misuse or content/playback failures.</summary>
-    public event Action<string> Diagnostic;
+    public event Action<string>? Diagnostic;
 
     /// <summary>The most recent diagnostic, or null when none has been reported.</summary>
-    public string LastDiagnostic { get; private set; }
+    public string? LastDiagnostic { get; private set; }
 
     public bool IsInitialized => content is not null && !disposed;
 
@@ -77,10 +77,10 @@ public sealed class AudioManager : IDisposable
             return;
 
         PruneFinishedSfx();
-        SoundEffectInstance instance = null;
+        SoundEffectInstance? instance = null;
         try
         {
-            SoundEffect effect = content.Load<SoundEffect>(entry.AssetName);
+            SoundEffect effect = content!.Load<SoundEffect>(entry.AssetName);
             instance = effect.CreateInstance();
             instance.Volume = masterVolume * sfxVolume;
             instance.Play();
@@ -107,7 +107,7 @@ public sealed class AudioManager : IDisposable
 
         try
         {
-            Song song = content.Load<Song>(entry.AssetName);
+            Song song = content!.Load<Song>(entry.AssetName);
             MediaPlayer.Stop();
             MediaPlayer.IsRepeating = loop;
             MediaPlayer.Volume = masterVolume * musicVolume;
@@ -164,7 +164,7 @@ public sealed class AudioManager : IDisposable
         entry = default;
         if (!EnsureInitialized())
             return false;
-        if (!catalog.TryGet(id, out entry))
+        if (!catalog!.TryGet(id, out entry))
         {
             Report($"Unknown audio ID '{id ?? "<null>"}'.");
             return false;

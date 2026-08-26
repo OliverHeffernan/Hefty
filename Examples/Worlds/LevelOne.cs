@@ -1,8 +1,8 @@
 using Hefty.Engine;
 using Hefty.Engine.Input;
+using Hefty.Engine.Textures;
 using Hefty.Examples.Components;
 using Hefty.Examples.GameObjects;
-using Hefty.Examples.Textures;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -13,8 +13,8 @@ public sealed class LevelOne : IWorld
 {
     private const int LevelWidth = 2000;
     private const int LevelHeight = 1200;
-    private Texture2D floorTexture;
-    private Texture2D objectTexture;
+    private Texture2D? floorTexture;
+    private Texture2D? objectTexture;
 
     public void Load(WorldContext world)
     {
@@ -24,7 +24,7 @@ public sealed class LevelOne : IWorld
         world.Input.Bind("Right", new KeyboardBinding(Keys.D));
         world.Input.Bind("Menu", new KeyboardBinding(Keys.M));
 
-        floorTexture = TextureFactory.CreateCheckeredTexture(
+        floorTexture = TextureFactory.CreateCheckerboard(
             world.GraphicsDevice,
             LevelWidth,
             LevelHeight,

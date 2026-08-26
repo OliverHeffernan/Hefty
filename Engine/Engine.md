@@ -7,6 +7,16 @@ Hefty uses four core types:
 - `GameObject` supplies identity, a transform, ordering, and component ownership.
 - `Component` is the extension point for behavior and rendering.
 
+## Installing the package
+
+Pin the engine version in the game project so upgrades remain deliberate and reproducible:
+
+```bash
+dotnet add package Hefty.Engine --version 0.1.0
+```
+
+Change the version in the resulting `PackageReference` when the game is ready to update or roll back. Games using the MonoGame content pipeline should also reference `MonoGame.Content.Builder.Task` version `3.8.5.1` and include their `.mgcb` file in the game project.
+
 ## Starting a game
 
 Pass the first world to `HeftyGame` and run it like any other MonoGame game:
@@ -17,6 +27,31 @@ using Hefty.Engine;
 using var game = new HeftyGame(new LevelOne());
 game.Run();
 ```
+
+Pass `HeftyGameOptions` to configure the host before MonoGame initializes its graphics device:
+
+```csharp
+using Hefty.Engine;
+using Microsoft.Xna.Framework;
+
+HeftyGameOptions options = new()
+{
+    BackBufferWidth = 1280,
+    BackBufferHeight = 720,
+    IsFullScreen = false,
+    IsMouseVisible = true,
+    IsFixedTimeStep = true,
+    ExitOnEscape = true,
+    ExitOnGamePadBack = true,
+    ClearColor = Color.Black,
+    ContentRootDirectory = "Content"
+};
+
+using var game = new HeftyGame(new LevelOne(), options);
+game.Run();
+```
+
+These values are fixed for the lifetime of the host. Width, height, and the content root are validated when `HeftyGame` is constructed.
 
 ## Loading a world
 

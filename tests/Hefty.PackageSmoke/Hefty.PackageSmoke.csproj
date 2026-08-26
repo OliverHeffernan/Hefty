@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <HeftyEngineVersion Condition="'$(HeftyEngineVersion)' == ''">0.1.0</HeftyEngineVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Hefty.Engine" Version="$(HeftyEngineVersion)" />
+  </ItemGroup>
+</Project>

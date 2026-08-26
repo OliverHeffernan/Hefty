@@ -9,7 +9,7 @@ namespace Hefty.Engine;
 public sealed class WorldContext
 {
     private readonly HeftyGame game;
-    private Camera2D activeCamera;
+    private Camera2D? activeCamera;
     internal WorldContext(HeftyGame game, ContentManager content, GraphicsDevice graphics, InputManager input)
         => (this.game, Content, GraphicsDevice, Input) = (game, content, graphics, input);
     /// <summary>Gets the host content manager. Assets loaded through it are manager-owned.</summary>
@@ -23,7 +23,7 @@ public sealed class WorldContext
     /// whose world has unloaded throws <see cref="InvalidOperationException"/>. A non-null camera must
     /// have been added to this world and must not be destroyed.
     /// </summary>
-    public Camera2D ActiveCamera
+    public Camera2D? ActiveCamera
     {
         get => activeCamera;
         set => game.SetActiveCamera(this, value);
@@ -40,6 +40,6 @@ public sealed class WorldContext
     /// <summary>Requests a deferred world switch. The current update and collision step complete safely.</summary>
     /// <remarks>If several changes are requested before the frame boundary, the last request wins.</remarks>
     public void ChangeWorld(IWorld world) => game.QueueWorld(this, world);
-    internal void SetActiveCamera(Camera2D camera) => activeCamera = camera;
+    internal void SetActiveCamera(Camera2D? camera) => activeCamera = camera;
     internal void Deactivate() { activeCamera = null; IsActive = false; }
 }

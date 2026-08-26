@@ -12,7 +12,7 @@ public class Collider
     private uint collisionMask;
 
     internal long Id { get; } = Interlocked.Increment(ref nextId);
-    internal PhysicsBody BodyInternal { get; set; }
+    internal PhysicsBody? BodyInternal { get; set; }
     /// <summary>Gets the transform used to position this collider.</summary>
     public Transform Transform { get; }
     /// <summary>Gets the collider dimensions in world units.</summary>
@@ -21,11 +21,11 @@ public class Collider
     public Vector2 Offset { get; }
 
     /// <summary>Raised on the first frame of contact.</summary>
-    public event Action<Collider> CollisionEntered;
+    public event Action<Collider>? CollisionEntered;
     /// <summary>Raised while contact continues.</summary>
-    public event Action<Collider> CollisionStayed;
+    public event Action<Collider>? CollisionStayed;
     /// <summary>Raised when contact ends.</summary>
-    public event Action<Collider> CollisionExited;
+    public event Action<Collider>? CollisionExited;
     /// <summary>Gets or sets whether contacts report events without blocking movement.</summary>
     public bool IsTrigger { get; set; }
     /// <summary>Gets or sets the single collision layer bit occupied by this collider.</summary>

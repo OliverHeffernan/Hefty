@@ -9,7 +9,7 @@ public sealed class SpriteAnimator : Component
 {
     private readonly SpriteRenderer sprite;
     private readonly Dictionary<string, AnimationClip> clips = new(StringComparer.Ordinal);
-    private AnimationClip currentClip;
+    private AnimationClip? currentClip;
     private double elapsedInFrame;
 
     public SpriteAnimator(SpriteRenderer sprite)
@@ -17,7 +17,7 @@ public sealed class SpriteAnimator : Component
         this.sprite = sprite ?? throw new ArgumentNullException(nameof(sprite));
     }
 
-    public string CurrentClipName { get; private set; }
+    public string? CurrentClipName { get; private set; }
     public int FrameIndex { get; private set; }
     public bool IsPlaying { get; private set; }
 
@@ -31,7 +31,7 @@ public sealed class SpriteAnimator : Component
     public void Play(string name, bool restart = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        if (!clips.TryGetValue(name, out AnimationClip clip))
+        if (!clips.TryGetValue(name, out AnimationClip? clip))
             throw new KeyNotFoundException($"No animation clip named '{name}' has been added.");
 
         if (!restart && IsPlaying && string.Equals(CurrentClipName, name, StringComparison.Ordinal))
@@ -64,22 +64,23 @@ public sealed class SpriteAnimator : Component
         // Accumulate progress in frames rather than dividing by a duration. The small
         // tolerance prevents values such as 0.3 * 10 being treated as 2.999999999...
         // at an exact frame boundary.
-        double frameProgress = elapsedInFrame * currentClip.FramesPerSecond;
+        AnimationClip clip = currentClip!;
+        double frameProgress = elapsedInFrame * clip.FramesPerSecond;
         long framesElapsed = (long)Math.Floor(frameProgress + 1e-9);
         if (framesElapsed == 0)
             return;
 
-        elapsedInFrame = (frameProgress - framesElapsed) / currentClip.FramesPerSecond;
-        if (currentClip.Loop)
+        elapsedInFrame = (frameProgress - framesElapsed) / clip.FramesPerSecond;
+        if (clip.Loop)
         {
-            FrameIndex = (int)((FrameIndex + framesElapsed) % currentClip.FrameCount);
+            FrameIndex = (int)((FrameIndex + framesElapsed) % clip.FrameCount);
         }
         else
         {
             long nextFrame = FrameIndex + framesElapsed;
-            if (nextFrame >= currentClip.FrameCount - 1)
+            if (nextFrame >= clip.FrameCount - 1)
             {
-                FrameIndex = currentClip.FrameCount - 1;
+                FrameIndex = clip.FrameCount - 1;
                 elapsedInFrame = 0;
                 IsPlaying = false;
             }
@@ -94,6 +95,6 @@ public sealed class SpriteAnimator : Component
 
     private void ApplyCurrentFrame()
     {
-        sprite.SourceRectangle = currentClip[FrameIndex];
+        sprite.SourceRectangle = currentClip![FrameIndex];
     }
 }

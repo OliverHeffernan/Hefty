@@ -17,9 +17,9 @@ public sealed class UiCanvas : GameObject
     private readonly IUiInputSource input;
     private readonly List<UiElement> children = [];
     private readonly List<UiElement> focusable = [];
-    private UiElement hovered;
-    private UiElement focused;
-    private UiElement pressed;
+    private UiElement? hovered;
+    private UiElement? focused;
+    private UiElement? pressed;
 
     public UiCanvas(GraphicsDevice graphicsDevice, IUiInputSource input)
     {
@@ -29,7 +29,7 @@ public sealed class UiCanvas : GameObject
     }
 
     public IReadOnlyList<UiElement> Children => children;
-    public UiElement FocusedElement => focused;
+    public UiElement? FocusedElement => focused;
     public string ConfirmAction { get; set; } = "UiConfirm";
     public string NextAction { get; set; } = "UiNext";
     public string PreviousAction { get; set; } = "UiPrevious";
@@ -65,11 +65,11 @@ public sealed class UiCanvas : GameObject
             children[i].DrawTree(spriteBatch, gameTime);
     }
 
-    public UiElement HitTest(Point screenPoint)
+    public UiElement? HitTest(Point screenPoint)
     {
         for (int i = children.Count - 1; i >= 0; i--)
         {
-            UiElement hit = children[i].HitTest(screenPoint);
+            UiElement? hit = children[i].HitTest(screenPoint);
             if (hit is not null) return hit;
         }
         return null;
@@ -105,7 +105,7 @@ public sealed class UiCanvas : GameObject
         else if (input.IsPressed(PreviousAction)) MoveFocus(-1);
         if (input.IsPressed(ConfirmAction))
         {
-            if (IsFocusableAndInteractive(focused))
+            if (focused is not null && IsFocusableAndInteractive(focused))
                 focused.Activate();
             else
                 SetFocus(null);
@@ -123,7 +123,7 @@ public sealed class UiCanvas : GameObject
         SetFocus(focusable[index]);
     }
 
-    private void SetHovered(UiElement element)
+    private void SetHovered(UiElement? element)
     {
         if (hovered == element) return;
         if (hovered is not null) hovered.IsHovered = false;
@@ -131,7 +131,7 @@ public sealed class UiCanvas : GameObject
         if (hovered is not null) hovered.IsHovered = true;
     }
 
-    private void SetFocus(UiElement element)
+    private void SetFocus(UiElement? element)
     {
         if (focused == element) return;
         if (focused is not null) focused.IsFocused = false;
@@ -146,21 +146,21 @@ public sealed class UiCanvas : GameObject
         if (IsInSubtree(element, pressed)) pressed = null;
     }
 
-    private static bool IsInSubtree(UiElement root, UiElement element)
+    private static bool IsInSubtree(UiElement root, UiElement? element)
     {
-        for (UiElement current = element; current is not null; current = current.Parent)
+        for (UiElement? current = element; current is not null; current = current.Parent)
             if (ReferenceEquals(current, root))
                 return true;
         return false;
     }
 
-    private bool IsFocusableAndInteractive(UiElement element)
+    private bool IsFocusableAndInteractive(UiElement? element)
     {
         if (element is null || !focusable.Contains(element)
             || !ReferenceEquals(element.OwnerCanvas, this))
             return false;
 
-        for (UiElement current = element; current is not null; current = current.Parent)
+        for (UiElement? current = element; current is not null; current = current.Parent)
             if (!current.Visible || !current.Enabled)
                 return false;
         return true;

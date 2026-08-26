@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -14,9 +15,9 @@ public class GameObject
     private readonly List<Component> pendingRemove = [];
     private bool iterating;
     internal long Sequence { get; set; }
-    internal WorldContext WorldInternal { get; private set; }
+    internal WorldContext? WorldInternal { get; private set; }
     /// <summary>Optional diagnostic name.</summary>
-    public string Name { get; set; }
+    public string? Name { get; set; }
     /// <summary>The object's permanent transform.</summary>
     public Transform Transform { get; } = new();
     /// <summary>Controls component updates.</summary>
@@ -43,9 +44,9 @@ public class GameObject
         return component;
     }
     /// <summary>Gets the first assignable component, or null.</summary>
-    public T GetComponent<T>() where T : Component => components.OfType<T>().FirstOrDefault();
+    public T? GetComponent<T>() where T : Component => components.OfType<T>().FirstOrDefault();
     /// <summary>Attempts to get the first assignable component.</summary>
-    public bool TryGetComponent<T>(out T component) where T : Component { component = GetComponent<T>(); return component is not null; }
+    public bool TryGetComponent<T>([NotNullWhen(true)] out T? component) where T : Component { component = GetComponent<T>(); return component is not null; }
     /// <summary>Removes a component. Removal during update/draw occurs after that pass.</summary>
     public bool RemoveComponent(Component component)
     {
