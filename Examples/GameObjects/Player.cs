@@ -6,26 +6,15 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Hefty.Examples.GameObjects;
 
-public class Player : Sprite
+public sealed class Player : GameObject
 {
     public Player(Texture2D texture)
-        : base(texture, new Transform(), new Vector2(50f, 50f))
     {
-        Collider col = new(Transform, new(50f, 50f), Vector2.Zero)
-		{
-			OnCollisionEnter = _ =>
-			{
-				System.Console.Write("enter ");
-				Color = Color.Red;
-			},
-			OnCollisionExit = _ =>
-			{
-				System.Console.Write("exit ");
-				Color = Color.White;
-			}
-		};
-        PhysicsBody body = new(Transform, BodyType.Kinematic, col);
-        AddComponent(body);
+        SpriteRenderer renderer = AddComponent(new SpriteRenderer(texture, new(50)));
+        PhysicsBody body = AddComponent(new PhysicsBody(BodyType.Kinematic));
+        Collider collider = body.AddCollider(new Collider(Transform, new(50), Vector2.Zero));
+        collider.CollisionEntered += _ => renderer.Color = Color.Red;
+        collider.CollisionExited += _ => renderer.Color = Color.White;
         AddComponent(new PlayerController(body));
     }
 }

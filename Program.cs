@@ -1,5 +1,5 @@
 ﻿using Hefty.Engine;
 using Hefty.Examples.Worlds;
 
-using var game = new Game1(new LevelOne());
+using var game = new HeftyGame(new LevelOne());
 game.Run();

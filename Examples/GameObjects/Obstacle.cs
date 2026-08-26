@@ -5,13 +5,12 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Hefty.Examples.GameObjects;
 
-public class Obstacle : Sprite
+public sealed class Obstacle : GameObject
 {
-	public Obstacle(Texture2D texture)
-		: base(texture, new Transform(), new Vector2(50f, 50f))
-	{
-		Color = Color.Red;
-		Collider collider = new(Transform, new Vector2(50f, 50f), Vector2.Zero);
-		AddComponent(new PhysicsBody(Transform, BodyType.Static, collider));
-	}
+    public Obstacle(Texture2D texture)
+    {
+        AddComponent(new SpriteRenderer(texture, new(50)) { Color = Color.Red });
+        PhysicsBody body = AddComponent(new PhysicsBody(BodyType.Static));
+        body.AddCollider(new Collider(Transform, new(50), Vector2.Zero));
+    }
 }

@@ -5,27 +5,39 @@ using Microsoft.Xna.Framework.Input;
 
 namespace Hefty.Engine.Input;
 
+/// <summary>Identifies a mouse button that can be queried or bound to an action.</summary>
 public enum MouseButton
 {
+    /// <summary>The primary mouse button.</summary>
     Left,
+    /// <summary>The wheel or middle mouse button.</summary>
     Middle,
+    /// <summary>The secondary mouse button.</summary>
     Right,
+    /// <summary>The first auxiliary mouse button.</summary>
     XButton1,
+    /// <summary>The second auxiliary mouse button.</summary>
     XButton2
 }
 
+/// <summary>Tests whether a device input is currently down.</summary>
 public interface IInputBinding
 {
+    /// <summary>Returns whether this binding is active in the supplied device snapshots.</summary>
     bool IsDown(KeyboardState keyboard, MouseState mouse);
 }
 
+/// <summary>Binds an action to one keyboard key.</summary>
 public readonly record struct KeyboardBinding(Keys Key) : IInputBinding
 {
+    /// <inheritdoc />
     public bool IsDown(KeyboardState keyboard, MouseState mouse) => keyboard.IsKeyDown(Key);
 }
 
+/// <summary>Binds an action to one mouse button.</summary>
 public readonly record struct MouseBinding(MouseButton Button) : IInputBinding
 {
+    /// <inheritdoc />
     public bool IsDown(KeyboardState keyboard, MouseState mouse) => Button switch
     {
         MouseButton.Left => mouse.LeftButton == ButtonState.Pressed,
@@ -38,7 +50,7 @@ public readonly record struct MouseBinding(MouseButton Button) : IInputBinding
 }
 
 /// <summary>Polls device state once per frame and exposes named, rebindable actions.</summary>
-public sealed class InputManager : Component
+public sealed class InputManager
 {
     private sealed class ActionState
     {
@@ -47,32 +59,33 @@ public sealed class InputManager : Component
         public bool Current;
     }
 
-    private static InputManager instance;
     private readonly Dictionary<string, ActionState> actions = new(StringComparer.Ordinal);
     private KeyboardState previousKeyboard;
     private KeyboardState currentKeyboard;
     private MouseState previousMouse;
     private MouseState currentMouse;
 
-    public static InputManager Instance() => instance ??= new InputManager();
-
+    /// <summary>Gets the latest mouse position.</summary>
     public Point MousePosition => currentMouse.Position;
 
+    /// <summary>Returns whether a mouse button became down during the current frame.</summary>
     public bool IsMouseButtonPressed(MouseButton button) =>
         IsMouseButtonDown(currentMouse, button) && !IsMouseButtonDown(previousMouse, button);
 
+    /// <summary>Returns whether a mouse button became up during the current frame.</summary>
     public bool IsMouseButtonReleased(MouseButton button) =>
         !IsMouseButtonDown(currentMouse, button) && IsMouseButtonDown(previousMouse, button);
 
+    /// <summary>Returns whether a mouse button is currently down.</summary>
     public bool IsMouseButtonDown(MouseButton button) => IsMouseButtonDown(currentMouse, button);
 
-    private InputManager()
+    internal InputManager()
     {
         currentKeyboard = previousKeyboard = Keyboard.GetState();
         currentMouse = previousMouse = Mouse.GetState();
     }
 
-    public override void Update(GameTime gameTime)
+    internal void Update()
     {
         previousKeyboard = currentKeyboard;
         previousMouse = currentMouse;
@@ -86,6 +99,8 @@ public sealed class InputManager : Component
         }
     }
 
+    /// <summary>Binds an input to an action, creating the action if necessary.</summary>
+    /// <remarks>Several bindings may activate one action. Adding the same binding twice has no effect.</remarks>
     public void Bind(string actionName, IInputBinding binding)
     {
         ArgumentNullException.ThrowIfNull(binding);
@@ -100,6 +115,8 @@ public sealed class InputManager : Component
             action.Previous = true;
     }
 
+    /// <summary>Removes one binding from an action.</summary>
+    /// <returns><see langword="true"/> when the binding was present.</returns>
     public bool Unbind(string actionName, IInputBinding binding)
     {
         ArgumentNullException.ThrowIfNull(binding);
@@ -107,27 +124,36 @@ public sealed class InputManager : Component
         return action is not null && action.Bindings.Remove(binding);
     }
 
+    /// <summary>Removes an action and all of its bindings.</summary>
     public bool RemoveAction(string actionName) => actions.Remove(ValidateActionName(actionName));
 
+    /// <summary>Removes every action. The engine calls this automatically when a world unloads.</summary>
     public void ClearActions() => actions.Clear();
 
+    /// <summary>Returns whether an action became active during the current frame.</summary>
     public bool IsPressed(string actionName)
     {
         ActionState action = GetAction(actionName);
         return action is not null && action.Current && !action.Previous;
     }
 
+    /// <summary>Returns whether at least one binding for an action is currently down.</summary>
     public bool IsHeld(string actionName) => GetAction(actionName)?.Current ?? false;
 
+    /// <summary>Returns whether an action became inactive during the current frame.</summary>
     public bool IsReleased(string actionName)
     {
         ActionState action = GetAction(actionName);
         return action is not null && !action.Current && action.Previous;
     }
 
+    /// <summary>Returns whether a key became down during the current frame.</summary>
     public bool IsKeyPressed(Keys key) => currentKeyboard.IsKeyDown(key) && previousKeyboard.IsKeyUp(key);
+    /// <summary>Returns whether a key became up during the current frame.</summary>
     public bool IsKeyReleased(Keys key) => currentKeyboard.IsKeyUp(key) && previousKeyboard.IsKeyDown(key);
+    /// <summary>Returns whether a key is currently down.</summary>
     public bool IsKeyDown(Keys key) => currentKeyboard.IsKeyDown(key);
+    /// <summary>Returns whether a key is currently up.</summary>
     public bool IsKeyUp(Keys key) => currentKeyboard.IsKeyUp(key);
 
     private bool IsAnyBindingDown(List<IInputBinding> bindings)

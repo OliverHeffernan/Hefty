@@ -8,7 +8,7 @@ namespace Hefty.Engine.Collision;
 /// <summary>
 /// Central motion solver, broadphase, and collision event dispatcher.
 /// </summary>
-public static class CollisionManager
+internal static class CollisionManager
 {
     private readonly record struct PairKey
     {
@@ -281,10 +281,10 @@ public static class CollisionManager
         int maxY = FloorCell(expanded.Bottom);
 
         for (int x = minX; x <= maxX; x++)
-        for (int y = minY; y <= maxY; y++)
-            if (grid.TryGetValue((x, y), out List<Collider> cell))
-                foreach (Collider collider in cell)
-                    result.Add(collider);
+            for (int y = minY; y <= maxY; y++)
+                if (grid.TryGetValue((x, y), out List<Collider> cell))
+                    foreach (Collider collider in cell)
+                        result.Add(collider);
 
         return result;
     }
@@ -304,12 +304,12 @@ public static class CollisionManager
             int minY = FloorCell(bounds.Top);
             int maxY = FloorCell(bounds.Bottom);
             for (int x = minX; x <= maxX; x++)
-            for (int y = minY; y <= maxY; y++)
-            {
-                if (!grid.TryGetValue((x, y), out List<Collider> cell))
-                    grid[(x, y)] = cell = [];
-                cell.Add(collider);
-            }
+                for (int y = minY; y <= maxY; y++)
+                {
+                    if (!grid.TryGetValue((x, y), out List<Collider> cell))
+                        grid[(x, y)] = cell = [];
+                    cell.Add(collider);
+                }
         }
 
         return grid;
@@ -326,8 +326,8 @@ public static class CollisionManager
         foreach (List<Collider> cell in grid.Values)
         {
             for (int i = 0; i < cell.Count; i++)
-            for (int j = i + 1; j < cell.Count; j++)
-                candidates.Add(new PairKey(cell[i], cell[j]));
+                for (int j = i + 1; j < cell.Count; j++)
+                    candidates.Add(new PairKey(cell[i], cell[j]));
         }
 
         HashSet<PairKey> detected = [];
@@ -359,9 +359,9 @@ public static class CollisionManager
                 continue;
 
             if (activePairs.Add(pair))
-                Notify(pair, static (self, other) => self.OnCollisionEnter?.Invoke(other));
+                Notify(pair, static (self, other) => self.RaiseEntered(other));
             else
-                Notify(pair, static (self, other) => self.OnCollisionStay?.Invoke(other));
+                Notify(pair, static (self, other) => self.RaiseStayed(other));
         }
 
         foreach (PairKey pair in activePairs
@@ -371,7 +371,7 @@ public static class CollisionManager
             .ToArray())
         {
             if (activePairs.Remove(pair))
-                Notify(pair, static (self, other) => self.OnCollisionExit?.Invoke(other));
+                Notify(pair, static (self, other) => self.RaiseExited(other));
         }
 
         foreach (Collider collider in snapshot)
@@ -555,7 +555,7 @@ public static class CollisionManager
             .ToArray())
         {
             if (activePairs.Remove(pair))
-                Notify(pair, static (self, other) => self.OnCollisionExit?.Invoke(other));
+                Notify(pair, static (self, other) => self.RaiseExited(other));
         }
     }
 
@@ -570,6 +570,6 @@ public static class CollisionManager
         pendingUnregister.Clear();
 
         foreach (PairKey pair in pairs)
-            Notify(pair, static (self, other) => self.OnCollisionExit?.Invoke(other));
+            Notify(pair, static (self, other) => self.RaiseExited(other));
     }
 }

@@ -1,40 +1,27 @@
 using Hefty.Engine;
 using Hefty.Engine.Collision;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
+
 namespace Hefty.Examples.Components;
 
-public class PlayerController(PhysicsBody body) : Component
+public sealed class PlayerController(PhysicsBody body) : Component
 {
-	private PhysicsBody Body { get; } = body;
-	private readonly KeyboardInputManager keyboardInputManager = KeyboardInputManager.Instance();
+    protected override void Update(GameTime gameTime)
+    {
+        Vector2 movement = Vector2.Zero;
+        if (World.Input.IsHeld("Up"))
+            movement.Y--;
+        if (World.Input.IsHeld("Down"))
+            movement.Y++;
+        if (World.Input.IsHeld("Left"))
+            movement.X--;
+        if (World.Input.IsHeld("Right"))
+            movement.X++;
 
-	public override void Update(GameTime gameTime)
-	{
-		float speed = 200f;
-		Vector2 movement = Vector2.Zero;
-
-		if (keyboardInputManager.IsKeyDown(Keys.W))
-		{
-			movement.Y -= 1;
-		}
-		if (keyboardInputManager.IsKeyDown(Keys.S))
-		{
-			movement.Y += 1;
-		}
-		if (keyboardInputManager.IsKeyDown(Keys.A))
-		{
-			movement.X -= 1;
-		}
-		if (keyboardInputManager.IsKeyDown(Keys.D))
-		{
-			movement.X += 1;
-		}
-
-		if (movement != Vector2.Zero)
-		{
-			movement.Normalize();
-			Body.Move(movement * speed * (float)gameTime.ElapsedGameTime.TotalSeconds);
-		}
-	}
+        if (movement != Vector2.Zero)
+        {
+            movement.Normalize();
+            body.Move(movement * 200f * (float)gameTime.ElapsedGameTime.TotalSeconds);
+        }
+    }
 }

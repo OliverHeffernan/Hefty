@@ -18,13 +18,15 @@ All engine implementation files are contained in `Engine/` under the `Hefty.Engi
 
 ## Engine systems
 
-- **Input:** [`Engine/Input/README.md`](Engine/Input/README.md) documents named keyboard/mouse actions and `IsPressed`, `IsHeld`, and `IsReleased` frame semantics. The existing `KeyboardInputManager` API remains compatible.
-- **Collision:** [`Engine/Collision/README.md`](Engine/Collision/README.md) documents static/kinematic bodies, movement intent, layer/mask filtering, non-blocking triggers, events, and the gameplay-then-physics update order.
+- **Core API:** [`Engine/Engine.md`](Engine/Engine.md) documents worlds, game objects, components, rendering, lifecycle, and cleanup.
+- **Input:** [`Engine/Input/Input.md`](Engine/Input/Input.md) documents world-owned keyboard/mouse actions and `IsPressed`, `IsHeld`, and `IsReleased` frame semantics.
+- **Collision:** [`Engine/Collision/Collision.md`](Engine/Collision/Collision.md) documents static/kinematic bodies, movement intent, layer/mask filtering, non-blocking triggers, and collision events.
 
 ## Requirements
 
 - [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
 - A platform supported by MonoGame DesktopGL (Windows, macOS, or Linux)
+- Linux users can use [mise](https://mise.jdx.dev/) to install and select the required .NET SDK automatically.
 
 ## Getting Started
 
@@ -43,6 +45,24 @@ To compile without launching the game:
 ```bash
 dotnet build
 ```
+
+### Linux
+
+The Linux helper scripts use `mise` and select .NET SDK `9.0.317`. Install `mise` first if it is not already available, then run:
+
+```bash
+./scripts/run-linux.sh
+```
+
+`run-linux.sh` and `build-linux.sh` run setup automatically. To prepare the dependencies without launching the game, run `setup-linux.sh` directly:
+
+```bash
+./scripts/setup-linux.sh
+```
+
+Use `./scripts/build-linux.sh` to compile without launching the game.
+
+The scripts enable invariant globalization for compatibility with minimal Linux installations that do not include ICU. If ICU is installed, it can be disabled with `DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=0`.
 
 ## Controls
 
@@ -71,9 +91,9 @@ Hefty.csproj
 
 The `Engine/` directory and `Hefty.Engine` namespace contain the entire engine. Everything under `Examples/` is disposable demonstration code for exercising engine features and showing how a game could use them. Example namespaces follow the directory structure, such as `Hefty.Examples.Components` and `Hefty.Examples.GameObjects`.
 
-A world implements `IWorld` and creates its scene in `Initialize`. Objects are registered with `Game1.Instantiate`, which adds them to the update and rendering loops according to the interfaces they implement. Calling `Game1.LoadWorld` queues a world change and safely clears the previous scene.
+A world implements `IWorld` and creates its scene in `Load`. It uses the supplied `WorldContext` to bind input, load content, add game objects, select a camera, and request deferred world changes. Each context is valid only while its world is active.
 
-`GameObject` holds `IUpdater` components, while drawable objects implement the engine's `IDrawable` interface. Sprites can be rendered in either world space, through the active camera, or directly in screen space for UI.
+Every `GameObject` has a `Transform` and owns reusable `Component` instances. Components provide update behavior and rendering; `SpriteRenderer` draws textures in world or screen space. Calling `Destroy` safely removes an object and cleans up its components at the next engine boundary.
 
 The included `LevelOne` world creates a procedurally generated floor, a controllable player, an obstacle, and a bounded camera that follows the player.
 

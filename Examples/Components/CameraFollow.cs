@@ -25,13 +25,8 @@ public class CameraFollow(Camera2D camera, Transform target) : Component
         }
     }
 
-    public bool Enabled { get; set; } = true;
-
-    public override void Update(GameTime gameTime)
+    protected override void Update(GameTime gameTime)
     {
-        if (!Enabled)
-            return;
-
         Vector2 destination = target.Position + Offset;
         if (Smoothing == 0f)
         {

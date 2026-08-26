@@ -1,15 +1,14 @@
 # Collision and kinematic response
 
-`Collider` remains a floating-point axis-aligned shape, layer/mask filter, and enter/stay/exit event source. Raw colliders are event-only. A trigger (`IsTrigger = true`) reports events but never blocks motion.
-
-Solid response is opt-in through `PhysicsBody`, which is also an engine `Component`. A body owns a shared `Transform` and one or more colliders and is either `Static` or `Kinematic`. Static bodies are immovable obstacles. Controllers call `kinematic.Move(displacement)` (or set `Velocity`); they must not directly move its transform during gameplay. Add bodies with `GameObject.AddComponent` for automatic cleanup, or call `Destroy` explicitly when managing them separately.
+`PhysicsBody` is a component and is registered only while its owner belongs to the active world. Construct it with `BodyType.Static` or `BodyType.Kinematic`, then add axis-aligned colliders that use the owner's transform:
 
 ```csharp
-Collider shape = new(transform, new Vector2(32, 48), Vector2.Zero);
-PhysicsBody body = new(transform, BodyType.Kinematic, shape);
-body.Move(inputDirection * speed * deltaSeconds);
+var body = gameObject.AddComponent(new PhysicsBody(BodyType.Kinematic));
+var shape = body.AddCollider(new Collider(gameObject.Transform, new(32, 48), Vector2.Zero));
+shape.CollisionEntered += other => Console.WriteLine("enter");
+body.Move(direction * speed * deltaSeconds);
 ```
 
-Each frame, `Game1` updates input and gameplay components first. It then calls `CollisionManager.Step`: pending kinematic motion is swept against filtered, non-trigger static bodies using floating-point AABBs, up to four deterministic impacts are resolved, and remaining tangential motion slides along surfaces. A small contact skin stabilizes resting contact. Events are dispatched afterward from final/touching state, with swept detection retaining fast trigger/event crossings.
+Removal, object destruction, and world unload unregister bodies and colliders reliably. `CollisionEntered`, `CollisionStayed`, and `CollisionExited` are events, so consumers cannot replace one another's handlers. Layers contain exactly one nonzero bit; both collision masks must permit a pair. Triggers report events without blocking.
 
-`Layer` is one non-zero bit and both masks must permit a pair. `GetBounds()` provides a conservative integer rectangle for legacy/query uses; response uses floating-point bounds internally. `ClearColliders` clears bodies, colliders, and contact state during world changes. No gravity, dynamic rigid bodies, rotation, friction, or restitution is implemented.
+Kinematic movement and `Velocity` are swept against non-trigger static bodies and slide along surfaces. Directly changing a kinematic transform during gameplay bypasses response. Collision stepping and registration are engine internals. Scope remains translation-only AABBs: no gravity, dynamic bodies, rotation, friction, or restitution.

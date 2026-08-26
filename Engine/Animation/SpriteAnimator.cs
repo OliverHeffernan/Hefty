@@ -7,12 +7,12 @@ namespace Hefty.Engine.Animation;
 /// <summary>Advances named animation clips and applies their frames to a sprite.</summary>
 public sealed class SpriteAnimator : Component
 {
-    private readonly Sprite sprite;
+    private readonly SpriteRenderer sprite;
     private readonly Dictionary<string, AnimationClip> clips = new(StringComparer.Ordinal);
     private AnimationClip currentClip;
     private double elapsedInFrame;
 
-    public SpriteAnimator(Sprite sprite)
+    public SpriteAnimator(SpriteRenderer sprite)
     {
         this.sprite = sprite ?? throw new ArgumentNullException(nameof(sprite));
     }
@@ -51,7 +51,7 @@ public sealed class SpriteAnimator : Component
         elapsedInFrame = 0;
     }
 
-    public override void Update(GameTime gameTime)
+    protected override void Update(GameTime gameTime)
     {
         if (!IsPlaying)
             return;

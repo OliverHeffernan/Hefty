@@ -1,11 +1,12 @@
 # Sprite animation
 
-`AnimationClip` stores validated texture source rectangles, a fixed frame rate, and whether playback loops. `SpriteAnimator` is a `Component`: attach it to the same `Sprite` it controls so the existing `GameObject.Update` path advances it.
+`AnimationClip` stores validated texture source rectangles, a fixed frame rate, and whether playback loops. `SpriteAnimator` is a `Component`: attach it to the same object as the `SpriteRenderer` it controls.
 
 ```csharp
 using Hefty.Engine.Animation;
 
-var sprite = new Sprite(texture, transform, new Vector2(32, 32));
+var gameObject = new GameObject();
+var sprite = gameObject.AddComponent(new SpriteRenderer(texture, new Vector2(32, 32)));
 var animator = new SpriteAnimator(sprite);
 
 animator.AddClip("walk", new AnimationClip(
@@ -17,11 +18,11 @@ animator.AddClip("walk", new AnimationClip(
     framesPerSecond: 10,
     loop: true));
 
-sprite.AddComponent(animator);
+gameObject.AddComponent(animator);
 animator.Play("walk");
-game.Instantiate(sprite);
+world.Add(gameObject);
 ```
 
 `Play` applies frame zero immediately. Calling it for the already-playing clip is a no-op unless `restart: true` is supplied. Non-looping clips stop on their final frame. `Stop` leaves the current frame visible.
 
-The animator changes only `Sprite.SourceRectangle`; position, scale, and the sprite-owned `Transform` are unaffected. Leaving `SourceRectangle` as `null` preserves full-texture drawing for non-animated sprites.
+The animator changes only `SpriteRenderer.SourceRectangle`; position and scale are unaffected.

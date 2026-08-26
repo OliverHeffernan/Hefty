@@ -5,12 +5,12 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Hefty.Engine.UI;
 
-public sealed class UiCanvas : GameObject, IDrawable
+public sealed class UiCanvas : GameObject
 {
-    private sealed class CanvasUpdater(UiCanvas canvas) : IUpdater
+    private sealed class CanvasComponent(UiCanvas canvas) : Component
     {
-        public void Update(GameTime gameTime) => canvas.UpdateCanvas(gameTime);
-        public int CompareTo(object obj) => 0;
+        protected override void Update(GameTime gameTime) => canvas.UpdateCanvas(gameTime);
+        protected override void Draw(SpriteBatch spriteBatch, GameTime gameTime) => canvas.DrawCanvas(spriteBatch, gameTime);
     }
 
     private readonly GraphicsDevice graphicsDevice;
@@ -25,7 +25,7 @@ public sealed class UiCanvas : GameObject, IDrawable
     {
         this.graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
         this.input = input ?? throw new ArgumentNullException(nameof(input));
-        AddComponent(new CanvasUpdater(this));
+        AddComponent(new CanvasComponent(this));
     }
 
     public IReadOnlyList<UiElement> Children => children;
@@ -59,7 +59,7 @@ public sealed class UiCanvas : GameObject, IDrawable
         return removed;
     }
 
-    public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
+    private void DrawCanvas(SpriteBatch spriteBatch, GameTime gameTime)
     {
         for (int i = 0; i < children.Count; i++)
             children[i].DrawTree(spriteBatch, gameTime);
