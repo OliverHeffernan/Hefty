@@ -25,22 +25,22 @@ All engine implementation files are contained in `Engine/` under the `Hefty.Engi
 
 ## Requirements
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - A platform supported by MonoGame DesktopGL (Windows, macOS, or Linux)
 - Linux users can use [mise](https://mise.jdx.dev/) to install and select the required .NET SDK automatically.
 
 ## Using the engine package
 
-Add an exact engine version to a .NET 9 game project:
+Add an exact engine version to a .NET 10 game project:
 
 ```bash
-dotnet add package Hefty.Engine --version 0.1.0
+dotnet add package Hefty.Engine --version 0.3.0
 ```
 
 The resulting project reference is explicit, so restoring the game continues to use that version until it is deliberately changed:
 
 ```xml
-<PackageReference Include="Hefty.Engine" Version="0.1.0" />
+<PackageReference Include="Hefty.Engine" Version="0.3.0" />
 ```
 
 To update, run the same command with the desired newer version or edit `Version` in the project file. To roll back, select an earlier version in the same way. Avoid floating versions such as `0.*` when reproducible game builds matter.
@@ -76,7 +76,7 @@ To compile the engine and sample without launching the game:
 dotnet build Hefty.sln
 ```
 
-To create `Hefty.Engine.0.1.0.nupkg` locally:
+To create `Hefty.Engine.0.3.0.nupkg` locally:
 
 ```bash
 dotnet pack Engine/Hefty.Engine.csproj --configuration Release --output artifacts/packages
@@ -96,7 +96,7 @@ Before the first release, add a repository Actions secret named `NUGET_API_KEY` 
 
 ### Linux
 
-The Linux helper scripts use `mise` and select .NET SDK `9.0.317`. Install `mise` first if it is not already available, then run:
+The Linux helper scripts use `mise` and select .NET SDK `10.0.400`. Install `mise` first if it is not already available, then run:
 
 ```bash
 ./scripts/run-linux.sh

@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Hefty.Engine</RootNamespace>
     <AssemblyName>Hefty.Engine</AssemblyName>
     <Nullable>enable</Nullable>
@@ -9,7 +9,7 @@
     <Deterministic>true</Deterministic>
 
     <PackageId>Hefty.Engine</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.3.0</Version>
     <Authors>Oliver Heffernan</Authors>
     <Copyright>Copyright © 2026 Oliver Heffernan</Copyright>
     <Description>A small component-based 2D game engine built on MonoGame DesktopGL.</Description>
