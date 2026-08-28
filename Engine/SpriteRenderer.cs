@@ -17,6 +17,9 @@ public sealed class SpriteRenderer : Component
     public Color Color { get; set; } = Color.White;
     /// <summary>Optional texture region.</summary>
     public Rectangle? SourceRectangle { get; set; }
+    /// <summary>Uses sharp point sampling instead of smooth linear sampling for pixel art.</summary>
+    public bool PixelArt { get; set; }
+    internal override SamplerState TextureSampler => PixelArt ? SamplerState.PointClamp : SamplerState.LinearClamp;
     protected override void Draw(SpriteBatch batch, GameTime time) => batch.Draw(Texture,
         new Rectangle((int)Transform.Position.X, (int)Transform.Position.Y, (int)(Size.X * Transform.Scale.X), (int)(Size.Y * Transform.Scale.Y)), SourceRectangle, Color);
 }

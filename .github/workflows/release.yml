@@ -1,0 +1,76 @@
+name: Publish NuGet
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Determine package version
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$ ]]; then
+            echo "Release tag must be a semantic version such as v0.2.0 or v0.2.0-beta.1." >&2
+            exit 1
+          fi
+          echo "value=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore
+        run: dotnet restore Hefty.sln
+
+      - name: Build
+        run: dotnet build Hefty.sln --configuration Release --no-restore
+
+      - name: Pack
+        run: >-
+          dotnet pack Engine/Hefty.Engine.csproj
+          --configuration Release
+          --no-restore
+          --output artifacts/packages
+          -p:Version=${{ steps.version.outputs.value }}
+
+      - name: Test packaged API
+        env:
+          PACKAGE_VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          dotnet restore tests/Hefty.PackageSmoke/Hefty.PackageSmoke.csproj \
+            --no-cache \
+            -p:HeftyEngineVersion="$PACKAGE_VERSION" \
+            -p:RestorePackagesPath="$RUNNER_TEMP/nuget-packages"
+          dotnet build tests/Hefty.PackageSmoke/Hefty.PackageSmoke.csproj \
+            --configuration Release \
+            --no-restore \
+            -p:HeftyEngineVersion="$PACKAGE_VERSION" \
+            -p:RestorePackagesPath="$RUNNER_TEMP/nuget-packages"
+
+      - name: Upload release packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: hefty-engine-${{ steps.version.outputs.value }}
+          path: |
+            artifacts/packages/Hefty.Engine.${{ steps.version.outputs.value }}.nupkg
+            artifacts/packages/Hefty.Engine.${{ steps.version.outputs.value }}.snupkg
+          if-no-files-found: error
+
+      - name: Publish to NuGet.org
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          PACKAGE_VERSION: ${{ steps.version.outputs.value }}
+        run: >-
+          dotnet nuget push "artifacts/packages/Hefty.Engine.$PACKAGE_VERSION.nupkg"
+          --api-key "$NUGET_API_KEY"
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate

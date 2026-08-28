@@ -38,6 +38,12 @@ public sealed class PackageWorld : IWorld
     {
         return TextureFactory.CreateBlankTexture(world.GraphicsDevice);
     }
+
+    /// <summary>Exercises pixel-art sampling through the packaged sprite renderer API.</summary>
+    public static SpriteRenderer CreatePixelArtRenderer(Texture2D texture)
+    {
+        return new SpriteRenderer(texture, new Vector2(64, 64)) { PixelArt = true };
+    }
 }
 
 /// <summary>Compiles a consumer-defined engine component.</summary>

@@ -71,7 +71,7 @@ public class GameObject
     }
     internal void Attach(WorldContext world) { WorldInternal = world; Flush(); foreach (Component c in components.ToArray()) c.InvokeWorldAttached(); }
     internal void UpdateInternal(GameTime time) { if (!Enabled || IsDestroyed) return; Iterate(components.OrderBy(c => c.UpdateOrder), c => { if (c.Enabled) c.InvokeUpdate(time); }); }
-    internal void DrawInternal(SpriteBatch batch, GameTime time) { if (!Visible || IsDestroyed) return; Iterate(components.OrderBy(c => c.DrawOrder), c => { if (c.Enabled) c.InvokeDraw(batch, time); }); }
+    internal void DrawInternal(SpriteBatch batch, GameTime time, Action<Component> prepareDraw) { if (!Visible || IsDestroyed) return; Iterate(components.OrderBy(c => c.DrawOrder), c => { if (c.Enabled) { prepareDraw(c); c.InvokeDraw(batch, time); } }); }
     internal void DestroyNow()
     {
         IsDestroyed = true;

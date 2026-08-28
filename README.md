@@ -82,11 +82,17 @@ To create `Hefty.Engine.0.1.0.nupkg` locally:
 dotnet pack Engine/Hefty.Engine.csproj --configuration Release --output artifacts/packages
 ```
 
-The package version is maintained in `Engine/Hefty.Engine.csproj`. Change its `Version` property before creating a release. To pack and then compile a standalone consumer against only that local package, run:
+The default local package version is maintained in `Engine/Hefty.Engine.csproj`. To pack and then compile a standalone consumer against only that local package, run:
 
 ```bash
 bash scripts/test-package.sh
 ```
+
+## Releasing to NuGet
+
+The [`Publish NuGet` workflow](.github/workflows/release.yml) publishes `Hefty.Engine` automatically when a GitHub Release is published. The release tag supplies the package version and must use semantic-version syntax, such as `v0.2.0` or `v0.2.0-beta.1`.
+
+Before the first release, add a repository Actions secret named `NUGET_API_KEY` containing a NuGet.org API key with permission to push `Hefty.Engine`. Then create and publish a GitHub Release from the commit to distribute. The workflow builds the solution, tests a consumer against the packed package, stores both package files as a workflow artifact, and pushes the package and symbols to NuGet.org. Re-running an existing release is safe because duplicate package versions are skipped.
 
 ### Linux
 

@@ -27,6 +27,7 @@ public abstract class Component
     internal void Detach() { if (owner is null) return; OnRemoved(); owner = null; }
     internal void InvokeUpdate(GameTime time) => Update(time);
     internal void InvokeDraw(SpriteBatch batch, GameTime time) => Draw(batch, time);
+    internal virtual SamplerState TextureSampler => SamplerState.LinearClamp;
     internal void InvokeWorldAttached() => OnWorldAttached();
     internal void InvokeWorldDetached() => OnWorldDetached();
     /// <summary>Called exactly once when attached to an object. World may be unavailable until that object is added.</summary>

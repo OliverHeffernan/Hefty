@@ -143,6 +143,15 @@ panel.AddComponent(new SpriteRenderer(texture, new Vector2(300, 100)));
 world.Add(panel);
 ```
 
+Set `PixelArt` to use sharp point sampling when a sprite is scaled:
+
+```csharp
+gameObject.AddComponent(new SpriteRenderer(texture, new Vector2(64, 64))
+{
+    PixelArt = true
+});
+```
+
 Objects default to enabled, visible, world-space rendering, and order zero. `UpdateOrder` and `DrawOrder` sort objects independently. Component properties with the same names sort components within their owner. The order of addition breaks ties deterministically.
 
 `SpriteRenderer` does not own or dispose its texture. `ContentManager` owns assets loaded through `world.Content`. A world must dispose textures or other resources it creates manually in `Unload`.

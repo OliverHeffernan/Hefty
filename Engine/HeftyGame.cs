@@ -113,8 +113,20 @@ public sealed class HeftyGame : Game
 
     private void DrawSpace(RenderSpace space, Matrix matrix, GameTime time)
     {
-        spriteBatch!.Begin(transformMatrix: matrix);
-        foreach (GameObject item in objects.Where(x => x.RenderSpace == space).OrderBy(x => x.DrawOrder).ThenBy(x => x.Sequence).ToArray()) item.DrawInternal(spriteBatch, time);
+        SamplerState samplerState = SamplerState.LinearClamp;
+        spriteBatch!.Begin(samplerState: samplerState, transformMatrix: matrix);
+        foreach (GameObject item in objects.Where(x => x.RenderSpace == space).OrderBy(x => x.DrawOrder).ThenBy(x => x.Sequence).ToArray())
+        {
+            item.DrawInternal(spriteBatch, time, component =>
+            {
+                if (ReferenceEquals(component.TextureSampler, samplerState))
+                    return;
+
+                spriteBatch.End();
+                samplerState = component.TextureSampler;
+                spriteBatch.Begin(samplerState: samplerState, transformMatrix: matrix);
+            });
+        }
         spriteBatch.End();
     }
 
