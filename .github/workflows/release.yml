@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   publish:
@@ -65,9 +66,15 @@ jobs:
             artifacts/packages/Hefty.Engine.${{ steps.version.outputs.value }}.snupkg
           if-no-files-found: error
 
+      - name: Authenticate with NuGet.org
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: olihef
+
       - name: Publish to NuGet.org
         env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
           PACKAGE_VERSION: ${{ steps.version.outputs.value }}
         run: >-
           dotnet nuget push "artifacts/packages/Hefty.Engine.$PACKAGE_VERSION.nupkg"
