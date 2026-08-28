@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <HeftyEngineVersion Condition="'$(HeftyEngineVersion)' == ''">0.3.0</HeftyEngineVersion>
+    <HeftyEngineVersion Condition="'$(HeftyEngineVersion)' == ''">0.3.1</HeftyEngineVersion>
   </PropertyGroup>
 
   <ItemGroup>

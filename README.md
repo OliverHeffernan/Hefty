@@ -34,13 +34,13 @@ All engine implementation files are contained in `Engine/` under the `Hefty.Engi
 Add an exact engine version to a .NET 10 game project:
 
 ```bash
-dotnet add package Hefty.Engine --version 0.3.0
+dotnet add package Hefty.Engine --version 0.3.1
 ```
 
 The resulting project reference is explicit, so restoring the game continues to use that version until it is deliberately changed:
 
 ```xml
-<PackageReference Include="Hefty.Engine" Version="0.3.0" />
+<PackageReference Include="Hefty.Engine" Version="0.3.1" />
 ```
 
 To update, run the same command with the desired newer version or edit `Version` in the project file. To roll back, select an earlier version in the same way. Avoid floating versions such as `0.*` when reproducible game builds matter.
@@ -56,7 +56,7 @@ game.Run();
 
 See the [core API guide](Engine/Engine.md) for host configuration and examples of adding worlds, game objects, components, cameras, input, and rendering. Games that use `.mgcb` content should also reference `MonoGame.Content.Builder.Task` at the same MonoGame version used by the engine (`3.8.5.1`).
 
-> `Hefty.Engine` is configured as a NuGet package but has not yet been published. Until it is published, use the local-package flow below.
+Published releases are available from NuGet.org. Use the local-package flow below to test unpublished changes.
 
 ## Building this repository
 
@@ -76,7 +76,7 @@ To compile the engine and sample without launching the game:
 dotnet build Hefty.sln
 ```
 
-To create `Hefty.Engine.0.3.0.nupkg` locally:
+To create `Hefty.Engine.0.3.1.nupkg` locally:
 
 ```bash
 dotnet pack Engine/Hefty.Engine.csproj --configuration Release --output artifacts/packages
@@ -92,7 +92,7 @@ bash scripts/test-package.sh
 
 The [`Publish NuGet` workflow](.github/workflows/release.yml) publishes `Hefty.Engine` automatically when a GitHub Release is published. The release tag supplies the package version and must use semantic-version syntax, such as `v0.2.0` or `v0.2.0-beta.1`.
 
-NuGet.org trusted publishing authorizes `release.yml` to publish packages matching `Hefty*` from this repository. Create and publish a GitHub Release from the commit to distribute. The workflow builds the solution, tests a consumer against the packed package, stores both package files as a workflow artifact, exchanges GitHub's OIDC token for a temporary NuGet credential, and pushes the package and symbols to NuGet.org. Re-running an existing release is safe because duplicate package versions are skipped.
+NuGet.org trusted publishing authorizes `release.yml` in the `production` environment to publish packages matching `Hefty*` from this repository. Create and publish a GitHub Release from the commit to distribute. The workflow builds the solution, tests a consumer against the packed package, stores both package files as a workflow artifact, exchanges GitHub's OIDC token for a temporary NuGet credential, and pushes the package and symbols to NuGet.org. Re-running an existing release is safe because duplicate package versions are skipped.
 
 ### Linux
 

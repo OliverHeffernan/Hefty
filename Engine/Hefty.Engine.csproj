@@ -9,7 +9,7 @@
     <Deterministic>true</Deterministic>
 
     <PackageId>Hefty.Engine</PackageId>
-    <Version>0.3.0</Version>
+    <Version>0.3.1</Version>
     <Authors>Oliver Heffernan</Authors>
     <Copyright>Copyright © 2026 Oliver Heffernan</Copyright>
     <Description>A small component-based 2D game engine built on MonoGame DesktopGL.</Description>
