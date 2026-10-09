@@ -8,7 +8,7 @@ namespace Hefty.Engine.Collision;
 /// <summary>
 /// Central motion solver, broadphase, and collision event dispatcher.
 /// </summary>
-internal static class CollisionManager
+public sealed class CollisionWorld
 {
     private readonly record struct PairKey
     {
@@ -28,25 +28,74 @@ internal static class CollisionManager
     private const float ContactTolerance = 0.001f;
     private const int MaxImpacts = 4;
 
-    private static readonly HashSet<Collider> colliders = [];
-    private static readonly HashSet<PhysicsBody> bodies = [];
-    private static readonly Dictionary<Collider, PhysicsBody> bodyByCollider = [];
-    private static readonly HashSet<PairKey> activePairs = [];
-    private static readonly Dictionary<Collider, Aabb> previousBounds = [];
-    private static readonly HashSet<Collider> pendingUnregister = [];
-    private static bool pendingClear;
-    private static int callbackDepth;
-    private static bool isChecking;
-    private static bool isStepping;
+    private readonly HashSet<Collider> colliders = [];
+    private readonly HashSet<PhysicsBody> bodies = [];
+    private readonly Dictionary<Collider, PhysicsBody> bodyByCollider = [];
+    private readonly HashSet<PairKey> activePairs = [];
+    private readonly Dictionary<Collider, Aabb> previousBounds = [];
+    private readonly HashSet<Collider> pendingUnregister = [];
+    private bool pendingClear;
+    private int callbackDepth;
+    private bool isChecking;
+    private bool isStepping;
+    internal bool HostOwned { get; init; }
 
-    public static void RegisterCollider(Collider collider)
+    /// <summary>Optional solid-response filter, evaluated after sweep and before resolution. Events remain geometric.</summary>
+    public Func<CollisionContact, bool>? ShouldResolve { get; set; }
+    /// <summary>Runs synchronously after all motion and contact events, even with no bodies or contacts.</summary>
+    public event Action<float>? Stepped;
+    /// <summary>Number of completed solver steps.</summary>
+    public long StepIndex { get; private set; }
+
+    /// <summary>Adds an object-owned body to this headless world. Hosted bodies register automatically.</summary>
+    public void Add(PhysicsBody body)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        _ = body.Transform;
+        if (body.Owner.IsDestroyed)
+            throw new InvalidOperationException("Destroyed bodies cannot be registered.");
+        if (body.Owner.WorldInternal is not null && !ReferenceEquals(body.World.Physics, this))
+            throw new InvalidOperationException("A hosted body must use its host's physics world.");
+        if (body.Colliders.Any(c => !ReferenceEquals(c.Transform, body.Transform)))
+            throw new InvalidOperationException("A collider must use its body's transform.");
+        if (body.CollisionWorld is not null && !ReferenceEquals(body.CollisionWorld, this))
+            throw new InvalidOperationException("A body can belong to only one collision world.");
+        body.CollisionWorld = this;
+        RegisterBody(body);
+        foreach (Collider collider in body.Colliders)
+            RegisterCollider(collider);
+    }
+
+    /// <summary>Removes a body and its contacts. Pending movement is discarded.</summary>
+    public void Remove(PhysicsBody body)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        if (!ReferenceEquals(body.CollisionWorld, this)) return;
+        foreach (Collider collider in body.Colliders.ToArray())
+            UnregisterCollider(collider);
+        UnregisterBody(body);
+        body.CollisionWorld = null;
+        body.ConsumeMovement(0);
+    }
+
+    /// <summary>Returns matching shapes at their current bounds, in registration order. Does not step or dispatch events.</summary>
+    public IReadOnlyList<Collider> Query(Aabb bounds, uint mask = uint.MaxValue, Predicate<Collider>? filter = null)
+    {
+        if (!float.IsFinite(bounds.Left) || !float.IsFinite(bounds.Top) || !float.IsFinite(bounds.Right)
+            || !float.IsFinite(bounds.Bottom) || bounds.Right < bounds.Left || bounds.Bottom < bounds.Top)
+            throw new ArgumentOutOfRangeException(nameof(bounds));
+        return QueryGrid(FormGrid(false), bounds).Where(c => (c.Layer & mask) != 0
+            && c.GetFloatBounds().Overlaps(bounds) && (filter is null || filter(c))).OrderBy(c => c.Id).ToArray();
+    }
+
+    internal void RegisterCollider(Collider collider)
     {
         ArgumentNullException.ThrowIfNull(collider);
         if (colliders.Add(collider))
             previousBounds[collider] = collider.GetFloatBounds();
     }
 
-    internal static void AttachCollider(PhysicsBody body, Collider collider)
+    internal void AttachCollider(PhysicsBody body, Collider collider)
     {
         ArgumentNullException.ThrowIfNull(body);
         ArgumentNullException.ThrowIfNull(collider);
@@ -63,7 +112,7 @@ internal static class CollisionManager
         bodyByCollider[collider] = body;
     }
 
-    public static void RegisterBody(PhysicsBody body)
+    private void RegisterBody(PhysicsBody body)
     {
         ArgumentNullException.ThrowIfNull(body);
         if (!bodies.Add(body))
@@ -73,7 +122,7 @@ internal static class CollisionManager
             AttachCollider(body, collider);
     }
 
-    public static void UnregisterBody(PhysicsBody body)
+    private void UnregisterBody(PhysicsBody body)
     {
         if (body is null)
             return;
@@ -87,7 +136,7 @@ internal static class CollisionManager
             }
     }
 
-    public static void UnregisterCollider(Collider collider)
+    internal void UnregisterCollider(Collider collider)
     {
         if (collider is null)
             return;
@@ -100,7 +149,7 @@ internal static class CollisionManager
         UnregisterColliderNow(collider);
     }
 
-    public static void ClearColliders()
+    public void Clear()
     {
         if (callbackDepth > 0)
         {
@@ -114,12 +163,19 @@ internal static class CollisionManager
     /// <summary>
     /// Consumes kinematic movement intent, resolves solid motion, and dispatches events.
     /// </summary>
-    public static void Step(float elapsedSeconds)
+    public void Step(float elapsedSeconds)
+    {
+        if (HostOwned)
+            throw new InvalidOperationException("The host steps this world exactly once per update.");
+        StepCore(elapsedSeconds);
+    }
+
+    internal void StepCore(float elapsedSeconds)
     {
         if (elapsedSeconds < 0f || float.IsNaN(elapsedSeconds) || float.IsInfinity(elapsedSeconds))
             throw new ArgumentOutOfRangeException(nameof(elapsedSeconds));
         if (isStepping || isChecking)
-            return;
+            throw new InvalidOperationException("Collision stepping is not reentrant.");
 
         isStepping = true;
         try
@@ -128,11 +184,18 @@ internal static class CollisionManager
             PhysicsBody[] snapshot = bodies.OrderBy(body => body.Id).ToArray();
             foreach (PhysicsBody body in snapshot)
             {
-                if (bodies.Contains(body) && body.Type == BodyType.Kinematic)
-                    Solve(body, body.ConsumeMovement(elapsedSeconds), grid);
+                if (!bodies.Contains(body)) continue;
+                body.BeginStep();
+                Vector2 start = body.Transform.Position;
+                Vector2 requested = body.ConsumeMovement(elapsedSeconds);
+                if (body.Type == BodyType.Kinematic)
+                    Solve(body, requested, grid);
+                body.Motion = new ResolvedMotion(requested, body.Transform.Position - start);
             }
 
             CheckCollisionsCore();
+            StepIndex++;
+            Stepped?.Invoke(elapsedSeconds);
         }
         finally
         {
@@ -145,8 +208,10 @@ internal static class CollisionManager
     /// <summary>
     /// Performs event-only detection for callers that do not use the physics step.
     /// </summary>
-    public static void CheckCollisions()
+    public void CheckCollisions()
     {
+        if (HostOwned)
+            throw new InvalidOperationException("The host dispatches contacts during its physics step.");
         if (isStepping || isChecking)
             return;
 
@@ -163,12 +228,13 @@ internal static class CollisionManager
         }
     }
 
-    private static void Solve(
+    private void Solve(
         PhysicsBody body,
         Vector2 movement,
         Dictionary<(int X, int Y), List<Collider>> grid)
     {
         Vector2 remaining = movement;
+        float consumedTime = 0f;
         for (int iteration = 0; iteration < MaxImpacts; iteration++)
         {
             bool hasMovement = remaining.LengthSquared() > 1e-12f;
@@ -176,6 +242,7 @@ internal static class CollisionManager
             float penetration = 0f;
             Vector2 collisionNormal = Vector2.Zero;
             Collider? hitCollider = null;
+            Collider? hitShape = null;
             bool startsOverlapping = false;
 
             foreach (Collider movingCollider in body.Colliders)
@@ -209,6 +276,11 @@ internal static class CollisionManager
                         continue;
                     }
 
+                    var contact = new CollisionContact(movingCollider, other, normal,
+                        consumedTime + (1f - consumedTime) * time, overlapDepth, initiallyOverlapping, remaining);
+                    if (ShouldResolve is not null && !ShouldResolve(contact))
+                        continue;
+
                     bool isEarlier = time < earliestTime - 1e-7f;
                     bool isTie = MathF.Abs(time - earliestTime) <= 1e-7f
                         && (hitCollider is null || other.Id < hitCollider.Id);
@@ -218,6 +290,7 @@ internal static class CollisionManager
                         penetration = overlapDepth;
                         collisionNormal = normal;
                         hitCollider = other;
+                        hitShape = movingCollider;
                         startsOverlapping = initiallyOverlapping;
                     }
                 }
@@ -232,6 +305,10 @@ internal static class CollisionManager
 
             if (!startsOverlapping && !hasMovement)
                 break;
+
+            consumedTime += (1f - consumedTime) * earliestTime;
+            body.AddContact(new CollisionContact(hitShape!, hitCollider, collisionNormal,
+                consumedTime, penetration, startsOverlapping, remaining));
 
             if (startsOverlapping)
             {
@@ -256,15 +333,15 @@ internal static class CollisionManager
         }
     }
 
-    private static bool IsStaticCollider(Collider collider) =>
+    private bool IsStaticCollider(Collider collider) =>
         bodyByCollider.TryGetValue(collider, out PhysicsBody? body)
         && body.Type == BodyType.Static;
 
-    private static bool IsOwnedBySameBody(PhysicsBody body, Collider collider) =>
+    private bool IsOwnedBySameBody(PhysicsBody body, Collider collider) =>
         bodyByCollider.TryGetValue(collider, out PhysicsBody? owner)
         && ReferenceEquals(owner, body);
 
-    private static bool IsOwnedBySameBody(Collider first, Collider second) =>
+    private bool IsOwnedBySameBody(Collider first, Collider second) =>
         bodyByCollider.TryGetValue(first, out PhysicsBody? firstOwner)
         && bodyByCollider.TryGetValue(second, out PhysicsBody? secondOwner)
         && ReferenceEquals(firstOwner, secondOwner);
@@ -289,7 +366,7 @@ internal static class CollisionManager
         return result;
     }
 
-    private static Dictionary<(int X, int Y), List<Collider>> FormGrid(bool includePreviousBounds)
+    private Dictionary<(int X, int Y), List<Collider>> FormGrid(bool includePreviousBounds)
     {
         Dictionary<(int X, int Y), List<Collider>> grid = [];
         foreach (Collider collider in colliders.OrderBy(collider => collider.Id))
@@ -317,7 +394,7 @@ internal static class CollisionManager
 
     private static int FloorCell(float coordinate) => (int)MathF.Floor(coordinate / GridSize);
 
-    private static void CheckCollisionsCore()
+    private void CheckCollisionsCore()
     {
         Collider[] snapshot = colliders.OrderBy(collider => collider.Id).ToArray();
         Dictionary<(int X, int Y), List<Collider>> grid = FormGrid(includePreviousBounds: true);
@@ -511,7 +588,7 @@ internal static class CollisionManager
         (first.CollisionMask & second.Layer) != 0
         && (second.CollisionMask & first.Layer) != 0;
 
-    private static void Notify(PairKey pair, Action<Collider, Collider> callback)
+    private void Notify(PairKey pair, Action<Collider, Collider> callback)
     {
         callbackDepth++;
         try
@@ -527,7 +604,7 @@ internal static class CollisionManager
         }
     }
 
-    private static void FlushPendingMutations()
+    private void FlushPendingMutations()
     {
         if (pendingClear)
         {
@@ -543,7 +620,7 @@ internal static class CollisionManager
             UnregisterColliderNow(collider);
     }
 
-    private static void UnregisterColliderNow(Collider collider)
+    private void UnregisterColliderNow(Collider collider)
     {
         if (!colliders.Remove(collider))
             return;
@@ -559,11 +636,16 @@ internal static class CollisionManager
         }
     }
 
-    private static void ClearNow()
+    private void ClearNow()
     {
         PairKey[] pairs = [.. activePairs];
         activePairs.Clear();
         colliders.Clear();
+        foreach (PhysicsBody body in bodies)
+        {
+            body.CollisionWorld = null;
+            body.ConsumeMovement(0);
+        }
         bodies.Clear();
         bodyByCollider.Clear();
         previousBounds.Clear();

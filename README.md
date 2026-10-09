@@ -1,6 +1,6 @@
 # Hefty
 
-A small 2D game-engine prototype built in C# with [MonoGame](https://monogame.net/). The project demonstrates a component-based update loop, world switching, sprites, camera tracking, keyboard input, and broad-phase collision detection and response.
+A small general-purpose 2D engine built in C# with [MonoGame](https://monogame.net/). It provides component/world lifecycles, rendering, retained UI and isolated synchronous services for simulation, input, audio and saves.
 
 All engine implementation files are contained in `Engine/` under the `Hefty.Engine` namespace. The files under `Examples/` are test and demonstration code; they are not part of the engine itself.
 
@@ -10,11 +10,15 @@ All engine implementation files are contained in `Engine/` under the `Hefty.Engi
 - Separate world-space and screen-space rendering
 - 2D camera with zoom, rotation, bounds, and coordinate conversion
 - Smooth camera-follow component
-- Keyboard input with held and just-pressed key states
+- Injectable keyboard/mouse/gamepad snapshots, actions, axes, triggers and deadzones
 - Swept AABB kinematic collision response with stable wall sliding
 - Layered collision enter/stay/exit callbacks and non-blocking triggers
 - Switchable worlds with initialization and cleanup hooks
 - MonoGame content pipeline support
+- Headless instance-owned physics with pre-solve filters, queries and post-physics finalization
+- Explicit audio resource ownership, bounded voices, reset and injected playback
+- Generic versioned game/settings saves alongside legacy SaveGame/contributors
+- Sprite-sheet animation with pause, manual advancement and per-animation clocks
 
 ## Engine systems
 
@@ -22,6 +26,11 @@ All engine implementation files are contained in `Engine/` under the `Hefty.Engi
 - **Input:** [`Engine/Input/Input.md`](Engine/Input/Input.md) documents world-owned keyboard/mouse actions and `IsPressed`, `IsHeld`, and `IsReleased` frame semantics.
 - **Collision:** [`Engine/Collision/Collision.md`](Engine/Collision/Collision.md) documents static/kinematic bodies, movement intent, layer/mask filtering, non-blocking triggers, and collision events.
 - **Textures:** [`Engine/Textures/Textures.md`](Engine/Textures/Textures.md) documents caller-owned blank and checkerboard runtime textures.
+- **UI:** [`Engine/UI/UI.md`](Engine/UI/UI.md) documents retained widgets and sampled controller navigation.
+- **Audio:** [`Engine/Audio/Audio.md`](Engine/Audio/Audio.md) documents content/generated resources, injection and caller-owned lifecycle.
+- **State:** [`Engine/State/State.md`](Engine/State/State.md) documents typed envelopes, migration, validation and legacy compatibility.
+- **Animation:** [`Engine/Animation/Animation.md`](Engine/Animation/Animation.md) documents sprite-sheet playback and clocks (not skeletons).
+- **Upgrade:** [`Engine/Migration.md`](Engine/Migration.md) lists the 0.3.1 → 0.4.0 lifecycle/ownership changes.
 
 ## Requirements
 
@@ -34,13 +43,13 @@ All engine implementation files are contained in `Engine/` under the `Hefty.Engi
 Add an exact engine version to a .NET 10 game project:
 
 ```bash
-dotnet add package Hefty.Engine --version 0.3.1
+dotnet add package Hefty.Engine --version 0.4.0
 ```
 
 The resulting project reference is explicit, so restoring the game continues to use that version until it is deliberately changed:
 
 ```xml
-<PackageReference Include="Hefty.Engine" Version="0.3.1" />
+<PackageReference Include="Hefty.Engine" Version="0.4.0" />
 ```
 
 To update, run the same command with the desired newer version or edit `Version` in the project file. To roll back, select an earlier version in the same way. Avoid floating versions such as `0.*` when reproducible game builds matter.
@@ -76,17 +85,23 @@ To compile the engine and sample without launching the game:
 dotnet build Hefty.sln
 ```
 
-To create `Hefty.Engine.0.3.1.nupkg` locally:
+To create `Hefty.Engine.0.4.0.nupkg` locally:
 
 ```bash
 dotnet pack Engine/Hefty.Engine.csproj --configuration Release --output artifacts/packages
 ```
 
-The default local package version is maintained in `Engine/Hefty.Engine.csproj`. To pack and then compile a standalone consumer against only that local package, run:
+The default local package version is maintained in `Engine/Hefty.Engine.csproj`. To pack and then execute the headless contracts against only that local package with a fresh dependency cache, run:
 
 ```bash
 bash scripts/test-package.sh
 ```
+
+Run source contracts with `dotnet test tests/Hefty.Tests/Hefty.Tests.csproj -c Release`.
+The optional native packaged check is `dotnet run --project tests/Hefty.PackageSmoke -c Release -- --host`;
+it requires DesktopGL and checks sampled controller UI and post-physics ordering. On Linux,
+use a desktop or `xvfb-run -a` with Mesa (`ALSOFT_DRIVERS=null` for a software audio device).
+Start directly in the sample menu with `dotnet run --project Hefty.Sample.csproj -- --menu`.
 
 ## Releasing to NuGet
 
@@ -119,6 +134,8 @@ The scripts enable invariant globalization for compatibility with minimal Linux 
 | `W`, `A`, `S`, `D` | Move the player |
 | `M` | Open the main menu |
 | `Enter` | Start the level from the main menu |
+| `Down` / gamepad D-pad | Focus the retained menu button |
+| Gamepad `A` / mouse click | Activate the focused / clicked menu button |
 | `Escape` | Exit the game |
 
 ## Project Structure

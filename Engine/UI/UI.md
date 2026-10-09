@@ -34,3 +34,30 @@ IUiInputSource input = new DelegateUiInputSource(
 The mouse delegates use A4's `InputManager.MousePosition` and left-button edge/state queries; choose another `MouseButton` when needed. The held/released action queries are exposed for custom widgets even though built-in navigation uses press edges.
 
 No fonts or textures are bundled. Supply a `SpriteFont` and a caller-owned texture (normally a 1x1 white texture) to widgets. The UI never creates assets or changes graphics state.
+
+## Sampled controller navigation and headless layout
+
+The built-in adapter is `new InputManagerUiInputSource(inputManager)`; DelegateUiInputSource
+remains supported. Bind UiNext/UiPrevious to D-pad buttons or signed stick-axis thresholds,
+and UiConfirm to A/Enter. Widgets consume only IUiInputSource, never game services:
+
+```csharp
+world.Input.Bind("UiNext", new GamePadButtonBinding(Buttons.DPadDown));
+world.Input.Bind("UiPrevious", new GamePadButtonBinding(Buttons.DPadUp));
+world.Input.Bind("UiConfirm", new GamePadButtonBinding(Buttons.A));
+var canvas = new UiCanvas(world.GraphicsDevice, new InputManagerUiInputSource(world.Input))
+    { RenderSpace = RenderSpace.Screen };
+world.Add(canvas);
+```
+
+A press moves deterministic focus; held controls do not autorepeat. Confirm activates the
+current interactive focus only. Disabled/hidden/removed focus clears. First press of Next
+focuses the first element; focus is initially null. Focus loss/reconnect baselines avoid
+accidental confirmation (see Input guide). MainMenu demonstrates retained controller input.
+
+For standalone tests use `new UiCanvas(() => new Rectangle(0,0,width,height), input)` and
+call `canvas.Update(gameTime)` **after** input sampling. Layout/hit testing/focus/activation
+need no native graphics. Hosted canvases update through their component and reject manual
+Update. Drawing still needs SpriteBatch and caller resources; use RenderSpace.Screen as before.
+Panel groups/layouts children, Label draws text, and ProgressBar renders a normalized fraction.
+The host owns draw state; UI does not own fonts/textures or poll native devices.

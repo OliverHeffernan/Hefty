@@ -34,7 +34,7 @@ public readonly record struct GameStateResult(bool Succeeded, GameStateFailure? 
 }
 
 /// <summary>Coordinates versioned, atomic save files and explicitly registered state owners.</summary>
-public sealed class GameStateManager
+public sealed partial class GameStateManager
 {
     private const string SaveExtension = ".json";
     private readonly Dictionary<string, IGameStateContributor> _contributors =
@@ -98,17 +98,7 @@ public sealed class GameStateManager
         try
         {
             json = JsonSerializer.Serialize(state, _serializerOptions);
-            Directory.CreateDirectory(SaveDirectory);
-            var temporaryPath = path + ".tmp-" + Guid.NewGuid().ToString("N");
-            try
-            {
-                File.WriteAllText(temporaryPath, json);
-                File.Move(temporaryPath, path, true);
-            }
-            finally
-            {
-                if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
-            }
+            WriteAtomic(path, json);
         }
         catch (GameStateException) { throw; }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException)
@@ -191,6 +181,21 @@ public sealed class GameStateManager
             slot is "." or ".." || slot.Any(character => !char.IsAsciiLetterOrDigit(character) && character is not '-' and not '_'))
             throw new GameStateException(GameStateFailure.InvalidSlot, "Slots may contain 1-64 ASCII letters, digits, hyphens, or underscores.");
         return Path.Combine(SaveDirectory, slot + SaveExtension);
+    }
+
+    private void WriteAtomic(string path, string json)
+    {
+        Directory.CreateDirectory(SaveDirectory);
+        var temporaryPath = path + ".tmp-" + Guid.NewGuid().ToString("N");
+        try
+        {
+            File.WriteAllText(temporaryPath, json);
+            File.Move(temporaryPath, path, true);
+        }
+        finally
+        {
+            if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
+        }
     }
 
     private static int ReadVersion(JsonElement root, JsonSerializerOptions serializerOptions)

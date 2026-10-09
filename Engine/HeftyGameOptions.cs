@@ -1,4 +1,5 @@
 using System;
+using Hefty.Engine.Input;
 using Microsoft.Xna.Framework;
 
 namespace Hefty.Engine;
@@ -6,6 +7,8 @@ namespace Hefty.Engine;
 /// <summary>Configures the MonoGame host before its graphics device is initialized.</summary>
 public sealed class HeftyGameOptions
 {
+    /// <summary>Optional replay/test device source. The caller owns it; the host samples it once per update.</summary>
+    public IInputSource? InputSource { get; init; }
     /// <summary>Gets the preferred back-buffer width in pixels.</summary>
     public int BackBufferWidth { get; init; } = 800;
 

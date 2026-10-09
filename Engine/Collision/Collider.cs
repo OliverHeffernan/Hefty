@@ -80,7 +80,8 @@ public class Collider
     /// <summary>Gets a conservative integer rectangle containing the collider's current bounds.</summary>
     public Rectangle GetBounds() => GetFloatBounds().ToRectangle();
 
-    internal Aabb GetFloatBounds() => new(
+    /// <summary>Gets exact world-space bounds without integer rounding.</summary>
+    public Aabb GetFloatBounds() => new(
         Transform.Position.X + Offset.X,
         Transform.Position.Y + Offset.Y,
         Transform.Position.X + Offset.X + Size.X,
