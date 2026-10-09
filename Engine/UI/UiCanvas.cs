@@ -13,7 +13,7 @@ public sealed class UiCanvas : GameObject
         protected override void Draw(SpriteBatch spriteBatch, GameTime gameTime) => canvas.DrawCanvas(spriteBatch, gameTime);
     }
 
-    private readonly GraphicsDevice graphicsDevice;
+    private readonly Func<Rectangle> screenBounds;
     private readonly IUiInputSource input;
     private readonly List<UiElement> children = [];
     private readonly List<UiElement> focusable = [];
@@ -22,8 +22,15 @@ public sealed class UiCanvas : GameObject
     private UiElement? pressed;
 
     public UiCanvas(GraphicsDevice graphicsDevice, IUiInputSource input)
+        : this(() => new Rectangle(0, 0, graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height), input)
     {
-        this.graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
+        ArgumentNullException.ThrowIfNull(graphicsDevice);
+    }
+
+    /// <summary>Creates a canvas whose layout and input can run without graphics. Drawing still needs SpriteBatch.</summary>
+    public UiCanvas(Func<Rectangle> screenBounds, IUiInputSource input)
+    {
+        this.screenBounds = screenBounds ?? throw new ArgumentNullException(nameof(screenBounds));
         this.input = input ?? throw new ArgumentNullException(nameof(input));
         AddComponent(new CanvasComponent(this));
     }
@@ -75,10 +82,16 @@ public sealed class UiCanvas : GameObject
         return null;
     }
 
+    /// <summary>Updates a standalone canvas after its input source has sampled. Hosted canvases update automatically.</summary>
+    public void Update(GameTime gameTime)
+    {
+        if (WorldInternal is not null) throw new InvalidOperationException("The host updates this canvas.");
+        UpdateCanvas(gameTime);
+    }
+
     private void UpdateCanvas(GameTime gameTime)
     {
-        Viewport viewport = graphicsDevice.Viewport;
-        Rectangle screen = new(0, 0, viewport.Width, viewport.Height);
+        Rectangle screen = screenBounds();
         focusable.Clear();
         for (int i = 0; i < children.Count; i++)
         {

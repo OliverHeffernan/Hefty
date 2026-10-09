@@ -39,10 +39,11 @@ public sealed class HeftyGame : Game
         Content.RootDirectory = this.options.ContentRootDirectory;
         IsMouseVisible = this.options.IsMouseVisible;
         IsFixedTimeStep = this.options.IsFixedTimeStep;
-        Input = new InputManager();
+        Input = CreateInput();
     }
 
     internal InputManager Input { get; private set; }
+    private InputManager CreateInput() => new(options.InputSource ?? new DeviceInputSource(() => IsActive)) { HostOwned = true };
 
     internal void QueueAdd(WorldContext source, GameObject gameObject)
     {
@@ -86,15 +87,16 @@ public sealed class HeftyGame : Game
 
     protected override void Update(GameTime gameTime)
     {
-        Input.Update();
+        Input.Sample();
         bool exitRequested = (options.ExitOnGamePadBack
-                && GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
+                && Input.IsGamePadDown(Buttons.Back))
             || (options.ExitOnEscape && Input.IsKeyDown(Keys.Escape));
         if (exitRequested)
             Exit();
         ApplyAdditions();
         foreach (GameObject item in objects.OrderBy(x => x.UpdateOrder).ThenBy(x => x.Sequence).ToArray()) item.UpdateInternal(gameTime);
-        CollisionManager.Step((float)gameTime.ElapsedGameTime.TotalSeconds);
+        context?.Physics.StepCore((float)gameTime.ElapsedGameTime.TotalSeconds);
+        foreach (GameObject item in objects.OrderBy(x => x.UpdateOrder).ThenBy(x => x.Sequence).ToArray()) item.PostPhysicsInternal(gameTime);
         RemoveDestroyed();
         ApplyPendingWorld();
         base.Update(gameTime);
@@ -144,7 +146,7 @@ public sealed class HeftyGame : Game
         IWorld incoming = pendingWorld;
         pendingWorld = null;
         UnloadWorld();
-        Input = new InputManager();
+        Input = CreateInput();
         activeWorld = incoming;
         context = new WorldContext(this, Content, GraphicsDevice, Input);
         activeWorld.Load(context);
@@ -157,7 +159,7 @@ public sealed class HeftyGame : Game
         activeWorld.Unload(context);
         foreach (GameObject item in objects.Concat(additions).Distinct()) item.DestroyNow();
         objects.Clear(); additions.Clear();
-        CollisionManager.ClearColliders();
+        context.Physics.Clear();
         Input.ClearActions();
         activeWorld = null; context = null;
     }

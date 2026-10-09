@@ -12,7 +12,7 @@ Hefty uses four core types:
 Pin the engine version in the game project so upgrades remain deliberate and reproducible:
 
 ```bash
-dotnet add package Hefty.Engine --version 0.1.0
+dotnet add package Hefty.Engine --version 0.4.0
 ```
 
 Change the version in the resulting `PackageReference` when the game is ready to update or roll back. Games using the MonoGame content pipeline should also reference `MonoGame.Content.Builder.Task` version `3.8.5.1` and include their `.mgcb` file in the game project.
@@ -123,9 +123,10 @@ Override the protected lifecycle, update, and draw hooks to implement a componen
 1. `OnAdded` runs when the component gains an owner. The object may not belong to a world yet.
 2. `OnWorldAttached` runs whenever the owner enters a world; `World` is available here.
 3. `Update` runs while both the object and component are enabled.
-4. `Draw` runs while the object is visible and the component is enabled.
-5. `OnWorldDetached` runs before the owner leaves its world, while `World` is still available.
-6. `OnRemoved` runs once before the component loses its owner, including during object destruction.
+4. Physics resolves motion and dispatches contacts, then `PostPhysics` runs while object and component are enabled.
+5. `Draw` runs while the object is visible and the component is enabled.
+6. `OnWorldDetached` runs before the owner leaves its world, while `World` is still available.
+7. `OnRemoved` runs once before the component loses its owner, including during object destruction.
 
 `Owner`, `Transform`, and `World` are convenient component properties. `World` is unavailable until the owner enters a world and after it leaves.
 
@@ -175,3 +176,52 @@ if (World.Input.IsPressed("OpenMenu"))
 ```
 
 The current update and collision step finish before the old world unloads. The engine then deactivates its context, calls `Unload`, destroys all old objects, clears collision and input state, and loads the new world. If several changes are requested before that boundary, the last request wins.
+
+## Integration boundaries in 0.4.0
+
+The host's update order is: one input sample → object/component `Update` → one physics
+step → collider events → `Physics.Stepped` → object/component `PostPhysics` → destruction
+and deferred world switch. Finalization runs on contact-free frames too. Ordering within
+both component passes uses `UpdateOrder` and stable insertion order. A component added
+during Update can participate in PostPhysics that frame; destroyed/disabled objects do not.
+Queue movement in Update and read `PhysicsBody.Motion`/`Contacts` in PostPhysics.
+Movement queued during finalization belongs to the next update. `HeftyGame` remains sealed;
+components and the world-owned `Stepped` event are supported extension points.
+
+Each `WorldContext.Physics` owns its bodies and pairs, and rejects manual `Step` and
+`CheckCollisions`. `new CollisionWorld()` and `new InputManager(source)` are synchronous,
+headless services. Hosted input rejects manual Update; use `HeftyGameOptions.InputSource`
+to supply device snapshots. These services are single-threaded; deterministic replay requires
+the same registration order, snapshots, delta times, and mutations. This is not a promise of
+bit-identical floating-point results across hardware. Do not retain old world services.
+
+Audio and saves are explicitly caller-owned: no service locator, automatic audio Update,
+or automatic state application. Inject adapters into game modules rather than passing the
+whole WorldContext. A module can emit movement/audio/save intents; its adapter owns their
+translation into engine calls. No character, damage, jump, stock, or hitstop policy is built in.
+
+## Subsystem reference
+
+The package includes these guides under `docs/`; the XML API file ships beside the assembly.
+
+| Subsystem | Public API and ownership | Guide |
+| --- | --- | --- |
+| Collision | CollisionWorld, PhysicsBody, Collider, Aabb; swept kinematic/static AABBs, no gravity/dynamics | [Collision](https://github.com/OliverHeffernan/Hefty/blob/main/Engine/Collision/Collision.md) |
+| Input | InputManager, IInputSource, InputSnapshot, bindings, deadzones; once per Update | [Input](https://github.com/OliverHeffernan/Hefty/blob/main/Engine/Input/Input.md) |
+| UI | UiCanvas, Button, Label, Panel, ProgressBar; caller-supplied input/font/texture | [UI](https://github.com/OliverHeffernan/Hefty/blob/main/Engine/UI/UI.md) |
+| Audio | AudioManager, AudioCatalog, IAudioResource/IAudioVoice; caller updates/disposes, bounded SFX | [Audio](https://github.com/OliverHeffernan/Hefty/blob/main/Engine/Audio/Audio.md) |
+| Saves/settings | GameStateManager; arbitrary typed data or legacy SaveGame/contributors | [State](https://github.com/OliverHeffernan/Hefty/blob/main/Engine/State/State.md) |
+| Animation | AnimationClip, SpriteAnimator; source rectangles, pause/manual/custom clock, no skeleton | [Animation](https://github.com/OliverHeffernan/Hefty/blob/main/Engine/Animation/Animation.md) |
+| Runtime textures | TextureFactory blank/checkerboard; caller disposes | [Textures](https://github.com/OliverHeffernan/Hefty/blob/main/Engine/Textures/Textures.md) |
+
+`SpriteRenderer` borrows its texture, supports tint/source rectangles, size/scale and pixel-art
+sampling. `Camera2D` is a GameObject with zoom, rotation, optional Bounds, view matrices and
+screen/world coordinate conversion. Assign an added camera to `world.ActiveCamera`; screen
+objects bypass it. `CameraFollow` is sample code, not a packaged API. `world.Content.Load<T>`
+loads MonoGame XNB assets owned by ContentManager; caller-created resources remain caller-owned.
+No fonts, textures, sounds, or content builder are bundled. The host owns its SpriteBatch;
+components must not change batch state themselves.
+
+See the packaged `docs/Migration.md` or the repository's
+[migration notes](https://github.com/OliverHeffernan/Hefty/blob/main/Engine/Migration.md)
+before upgrading from 0.3.1.

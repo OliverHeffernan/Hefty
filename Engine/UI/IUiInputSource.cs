@@ -1,4 +1,5 @@
 using System;
+using Hefty.Engine.Input;
 using Microsoft.Xna.Framework;
 
 namespace Hefty.Engine.UI;
@@ -12,6 +13,19 @@ public interface IUiInputSource
     bool IsPressed(string action);
     bool IsHeld(string action);
     bool IsReleased(string action);
+}
+
+/// <summary>Adapts sampled input without polling devices. Bind canvas actions to keyboard, pad buttons or axes.</summary>
+public sealed class InputManagerUiInputSource(InputManager input) : IUiInputSource
+{
+    private readonly InputManager input = input ?? throw new ArgumentNullException(nameof(input));
+    public Point MousePosition => input.MousePosition;
+    public bool IsMousePressed => input.IsMouseButtonPressed(MouseButton.Left);
+    public bool IsMouseHeld => input.IsMouseButtonDown(MouseButton.Left);
+    public bool IsMouseReleased => input.IsMouseButtonReleased(MouseButton.Left);
+    public bool IsPressed(string action) => input.IsPressed(action);
+    public bool IsHeld(string action) => input.IsHeld(action);
+    public bool IsReleased(string action) => input.IsReleased(action);
 }
 
 public sealed class DelegateUiInputSource(

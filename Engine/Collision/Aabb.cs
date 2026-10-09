@@ -6,7 +6,7 @@ namespace Hefty.Engine.Collision;
 /// <summary>
 /// Floating-point axis-aligned bounds used by the physics solver.
 /// </summary>
-internal readonly record struct Aabb(float Left, float Top, float Right, float Bottom)
+public readonly record struct Aabb(float Left, float Top, float Right, float Bottom)
 {
     public float Width => Right - Left;
     public float Height => Bottom - Top;

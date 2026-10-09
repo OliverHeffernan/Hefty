@@ -20,6 +20,12 @@ public sealed class SpriteAnimator : Component
     public string? CurrentClipName { get; private set; }
     public int FrameIndex { get; private set; }
     public bool IsPlaying { get; private set; }
+    /// <summary>Freezes time without disabling the sprite or resetting partial-frame progress.</summary>
+    public bool IsPaused { get; set; }
+    /// <summary>False leaves advancement entirely to Advance.</summary>
+    public bool AutoAdvance { get; set; } = true;
+    /// <summary>Optional per-animation clock returning delta seconds; defaults to GameTime.</summary>
+    public Func<GameTime, double>? TimeSource { get; set; }
 
     public void AddClip(string name, AnimationClip clip)
     {
@@ -53,22 +59,31 @@ public sealed class SpriteAnimator : Component
 
     protected override void Update(GameTime gameTime)
     {
-        if (!IsPlaying)
+        if (AutoAdvance && !IsPaused && IsPlaying)
+            Advance(TimeSource?.Invoke(gameTime) ?? gameTime.ElapsedGameTime.TotalSeconds);
+    }
+
+    /// <summary>Advances explicitly, independent of AutoAdvance. Pause also blocks manual advancement.</summary>
+    public void Advance(double elapsedSeconds)
+    {
+        if (!double.IsFinite(elapsedSeconds) || elapsedSeconds < 0 || elapsedSeconds > int.MaxValue)
+            throw new ArgumentOutOfRangeException(nameof(elapsedSeconds));
+        if (!IsPlaying || IsPaused || elapsedSeconds == 0)
             return;
 
-        double elapsedSeconds = gameTime.ElapsedGameTime.TotalSeconds;
-        if (elapsedSeconds <= 0)
-            return;
-
-        elapsedInFrame += elapsedSeconds;
         // Accumulate progress in frames rather than dividing by a duration. The small
         // tolerance prevents values such as 0.3 * 10 being treated as 2.999999999...
         // at an exact frame boundary.
         AnimationClip clip = currentClip!;
-        double frameProgress = elapsedInFrame * clip.FramesPerSecond;
+        double frameProgress = (elapsedInFrame + elapsedSeconds) * clip.FramesPerSecond;
+        if (!double.IsFinite(frameProgress) || frameProgress >= long.MaxValue)
+            throw new ArgumentOutOfRangeException(nameof(elapsedSeconds), "Frame advancement exceeds the supported range.");
         long framesElapsed = (long)Math.Floor(frameProgress + 1e-9);
         if (framesElapsed == 0)
+        {
+            elapsedInFrame += elapsedSeconds;
             return;
+        }
 
         elapsedInFrame = (frameProgress - framesElapsed) / clip.FramesPerSecond;
         if (clip.Loop)

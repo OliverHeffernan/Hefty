@@ -36,6 +36,9 @@ jobs:
       - name: Build
         run: dotnet build Hefty.sln --configuration Release --no-restore
 
+      - name: Headless regression tests
+        run: dotnet test tests/Hefty.Tests/Hefty.Tests.csproj --configuration Release --no-build
+
       - name: Pack
         run: >-
           dotnet pack Engine/Hefty.Engine.csproj
@@ -52,11 +55,18 @@ jobs:
             --no-cache \
             -p:HeftyEngineVersion="$PACKAGE_VERSION" \
             -p:RestorePackagesPath="$RUNNER_TEMP/nuget-packages"
-          dotnet build tests/Hefty.PackageSmoke/Hefty.PackageSmoke.csproj \
+          dotnet test tests/Hefty.PackageSmoke/Hefty.PackageSmoke.csproj \
             --configuration Release \
             --no-restore \
             -p:HeftyEngineVersion="$PACKAGE_VERSION" \
             -p:RestorePackagesPath="$RUNNER_TEMP/nuget-packages"
+
+      - name: Native packaged integration
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri libopenal1 libsdl2-2.0-0
+          xvfb-run -a env ALSOFT_DRIVERS=null LIBGL_ALWAYS_SOFTWARE=1 \
+            dotnet tests/Hefty.PackageSmoke/bin/Release/net10.0/Hefty.PackageSmoke.dll --host
 
       - name: Upload release packages
         uses: actions/upload-artifact@v4

@@ -25,6 +25,8 @@ public interface IInputBinding
 {
     /// <summary>Returns whether this binding is active in the supplied device snapshots.</summary>
     bool IsDown(KeyboardState keyboard, MouseState mouse);
+    /// <summary>Snapshot-aware binding. Existing keyboard/mouse implementations remain compatible.</summary>
+    bool IsDown(InputSnapshot snapshot) => IsDown(snapshot.Keyboard, snapshot.Mouse);
 }
 
 /// <summary>Binds an action to one keyboard key.</summary>
@@ -60,6 +62,12 @@ public sealed class InputManager
     }
 
     private readonly Dictionary<string, ActionState> actions = new(StringComparer.Ordinal);
+    private readonly IInputSource source;
+    private bool sampled;
+    private InputSnapshot previous;
+    /// <summary>The latest sampled devices. Never polls hardware when read.</summary>
+    public InputSnapshot Snapshot { get; private set; }
+    internal bool HostOwned { get; init; }
     private KeyboardState previousKeyboard;
     private KeyboardState currentKeyboard;
     private MouseState previousMouse;
@@ -79,25 +87,64 @@ public sealed class InputManager
     /// <summary>Returns whether a mouse button is currently down.</summary>
     public bool IsMouseButtonDown(MouseButton button) => IsMouseButtonDown(currentMouse, button);
 
-    internal InputManager()
+    /// <summary>Constructs without polling. The first update establishes an edge-free baseline.</summary>
+    public InputManager(IInputSource? source = null) => this.source = source ?? new DeviceInputSource();
+
+    /// <summary>Samples once. Hosted managers are sampled by HeftyGame and reject manual updates.</summary>
+    public void Update()
     {
-        currentKeyboard = previousKeyboard = Keyboard.GetState();
-        currentMouse = previousMouse = Mouse.GetState();
+        if (HostOwned) throw new InvalidOperationException("The host samples input once per update.");
+        Sample();
     }
 
-    internal void Update()
+    internal void Sample()
     {
-        previousKeyboard = currentKeyboard;
-        previousMouse = currentMouse;
-        currentKeyboard = Keyboard.GetState();
-        currentMouse = Mouse.GetState();
+        previous = Snapshot;
+        InputSnapshot next = source.Sample();
+        Snapshot = next.IsFocused ? next : new InputSnapshot(default, default, IsFocused: false);
+        if (!sampled || !previous.IsFocused || !Snapshot.IsFocused)
+            previous = Snapshot;
+        else
+            previous = previous with
+            {
+                One = Baseline(previous.One, Snapshot.One), Two = Baseline(previous.Two, Snapshot.Two),
+                Three = Baseline(previous.Three, Snapshot.Three), Four = Baseline(previous.Four, Snapshot.Four)
+            };
+        sampled = true;
+        previousKeyboard = previous.Keyboard;
+        previousMouse = previous.Mouse;
+        currentKeyboard = Snapshot.Keyboard;
+        currentMouse = Snapshot.Mouse;
 
         foreach (ActionState action in actions.Values)
         {
-            action.Previous = action.Current;
+            action.Previous = IsAnyBindingDown(action.Bindings, previous);
             action.Current = IsAnyBindingDown(action.Bindings);
         }
     }
+
+    private static GamePadState Baseline(GamePadState old, GamePadState next) =>
+        old.IsConnected != next.IsConnected ? next : old;
+
+    public bool IsGamePadDown(Buttons button, PlayerIndex player = PlayerIndex.One) =>
+        Snapshot.GamePad(player).IsConnected && Snapshot.GamePad(player).IsButtonDown(button);
+    public bool IsGamePadPressed(Buttons button, PlayerIndex player = PlayerIndex.One) =>
+        IsGamePadDown(button, player) && !previous.GamePad(player).IsButtonDown(button);
+    public bool IsGamePadReleased(Buttons button, PlayerIndex player = PlayerIndex.One) =>
+        !IsGamePadDown(button, player) && previous.GamePad(player).IsButtonDown(button);
+    public float GetAxis(GamePadAxis axis, PlayerIndex player = PlayerIndex.One, float deadzone = 0.2f) =>
+        InputDeadzone.Apply(ReadAxis(Snapshot.GamePad(player), axis), deadzone);
+    public Vector2 GetStick(bool right = false, PlayerIndex player = PlayerIndex.One, float deadzone = 0.2f) =>
+        InputDeadzone.ApplyRadial(!Snapshot.GamePad(player).IsConnected ? Vector2.Zero
+            : right ? Snapshot.GamePad(player).ThumbSticks.Right : Snapshot.GamePad(player).ThumbSticks.Left, deadzone);
+
+    internal static float ReadAxis(GamePadState pad, GamePadAxis axis) => !pad.IsConnected ? 0 : axis switch
+    {
+        GamePadAxis.LeftX => pad.ThumbSticks.Left.X, GamePadAxis.LeftY => pad.ThumbSticks.Left.Y,
+        GamePadAxis.RightX => pad.ThumbSticks.Right.X, GamePadAxis.RightY => pad.ThumbSticks.Right.Y,
+        GamePadAxis.LeftTrigger => pad.Triggers.Left, GamePadAxis.RightTrigger => pad.Triggers.Right,
+        _ => throw new ArgumentOutOfRangeException(nameof(axis))
+    };
 
     /// <summary>Binds an input to an action, creating the action if necessary.</summary>
     /// <remarks>Several bindings may activate one action. Adding the same binding twice has no effect.</remarks>
@@ -156,10 +203,13 @@ public sealed class InputManager
     /// <summary>Returns whether a key is currently up.</summary>
     public bool IsKeyUp(Keys key) => currentKeyboard.IsKeyUp(key);
 
-    private bool IsAnyBindingDown(List<IInputBinding> bindings)
+    private bool IsAnyBindingDown(List<IInputBinding> bindings) => IsAnyBindingDown(bindings, Snapshot);
+
+    private static bool IsAnyBindingDown(List<IInputBinding> bindings, InputSnapshot snapshot)
     {
+        if (!snapshot.IsFocused) return false;
         foreach (IInputBinding binding in bindings)
-            if (binding.IsDown(currentKeyboard, currentMouse))
+            if (binding.IsDown(snapshot))
                 return true;
         return false;
     }

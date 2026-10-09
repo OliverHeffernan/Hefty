@@ -27,5 +27,7 @@ if [[ -z "$PACKAGE_VERSION" ]]; then
   exit 1
 fi
 
-"${DOTNET_COMMAND[@]}" restore "$SMOKE_PROJECT" --no-cache -p:HeftyEngineVersion="$PACKAGE_VERSION"
-"${DOTNET_COMMAND[@]}" build "$SMOKE_PROJECT" --configuration Release --no-restore -p:HeftyEngineVersion="$PACKAGE_VERSION"
+CONSUMER_PACKAGES="$(mktemp -d)"
+trap 'rm -rf "$CONSUMER_PACKAGES"' EXIT
+"${DOTNET_COMMAND[@]}" restore "$SMOKE_PROJECT" --no-cache -p:HeftyEngineVersion="$PACKAGE_VERSION" -p:RestorePackagesPath="$CONSUMER_PACKAGES"
+"${DOTNET_COMMAND[@]}" test "$SMOKE_PROJECT" --configuration Release --no-restore -p:HeftyEngineVersion="$PACKAGE_VERSION" -p:RestorePackagesPath="$CONSUMER_PACKAGES"

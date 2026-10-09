@@ -26,6 +26,7 @@ public abstract class Component
     internal void Attach(GameObject gameObject) { if (owner is not null) throw new InvalidOperationException("Components cannot be shared."); owner = gameObject; OnAdded(); }
     internal void Detach() { if (owner is null) return; OnRemoved(); owner = null; }
     internal void InvokeUpdate(GameTime time) => Update(time);
+    internal void InvokePostPhysics(GameTime time) => PostPhysics(time);
     internal void InvokeDraw(SpriteBatch batch, GameTime time) => Draw(batch, time);
     internal virtual SamplerState TextureSampler => SamplerState.LinearClamp;
     internal void InvokeWorldAttached() => OnWorldAttached();
@@ -40,6 +41,9 @@ public abstract class Component
     protected virtual void OnRemoved() { }
     /// <summary>Called by the engine while this component and its owner are enabled.</summary>
     protected virtual void Update(GameTime gameTime) { }
+    /// <summary>Runs once after resolved motion and contact events, including contact-free frames.
+    /// Movement queued here applies on the next update. Disabled/destroyed objects do not finalize.</summary>
+    protected virtual void PostPhysics(GameTime gameTime) { }
     /// <summary>Called by the engine while enabled and the owner is visible.</summary>
     protected virtual void Draw(SpriteBatch spriteBatch, GameTime gameTime) { }
 }

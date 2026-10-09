@@ -1,4 +1,5 @@
 using System;
+using Hefty.Engine.Collision;
 using Hefty.Engine.Input;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -18,6 +19,8 @@ public sealed class WorldContext
     public GraphicsDevice GraphicsDevice { get; }
     /// <summary>Gets the input service. Bindings are cleared when this world unloads.</summary>
     public InputManager Input { get; }
+    /// <summary>Instance-owned physics. The host steps it; manual stepping throws.</summary>
+    public CollisionWorld Physics { get; } = new() { HostOwned = true };
     /// <summary>
     /// Gets or sets the camera used for world-space rendering. Setting this property through a context
     /// whose world has unloaded throws <see cref="InvalidOperationException"/>. A non-null camera must

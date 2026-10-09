@@ -21,7 +21,16 @@ public sealed class PhysicsBody : Component
     private readonly List<Collider> colliders = [];
     private Vector2 pendingMovement;
     private Vector2 velocity;
-    private bool registered;
+    private readonly List<CollisionContact> contacts = [];
+
+    /// <summary>World currently owning this body, or null while unregistered.</summary>
+    public CollisionWorld? CollisionWorld { get; internal set; }
+    /// <summary>Latest resolved translation. Updated before contact events and finalization.</summary>
+    public ResolvedMotion Motion { get; internal set; }
+    /// <summary>Solid solver impacts in order, cleared every step. Triggers use collider events instead.</summary>
+    public IReadOnlyList<CollisionContact> Contacts => contacts.AsReadOnly();
+    internal void BeginStep() => contacts.Clear();
+    internal void AddContact(CollisionContact contact) => contacts.Add(contact);
 
     internal long Id { get; } = Interlocked.Increment(ref nextId);
 
@@ -60,10 +69,10 @@ public sealed class PhysicsBody : Component
 
         collider.BodyInternal = this;
         colliders.Add(collider);
-        if (registered)
+        if (CollisionWorld is not null)
         {
-            CollisionManager.RegisterCollider(collider);
-            CollisionManager.AttachCollider(this, collider);
+            CollisionWorld.RegisterCollider(collider);
+            CollisionWorld.AttachCollider(this, collider);
         }
         return collider;
     }
@@ -75,8 +84,7 @@ public sealed class PhysicsBody : Component
         ArgumentNullException.ThrowIfNull(collider);
         if (!colliders.Remove(collider))
             return false;
-        if (registered)
-            CollisionManager.UnregisterCollider(collider);
+        CollisionWorld?.UnregisterCollider(collider);
         collider.BodyInternal = null;
         return true;
     }
@@ -97,22 +105,15 @@ public sealed class PhysicsBody : Component
             if (!ReferenceEquals(collider.Transform, Owner.Transform))
                 throw new InvalidOperationException("A collider must use its body's owner transform.");
 
-        registered = true;
-        CollisionManager.RegisterBody(this);
-        foreach (Collider collider in colliders)
-            CollisionManager.RegisterCollider(collider);
+        World.Physics.Add(this);
     }
 
     protected override void OnWorldDetached()
     {
-        if (!registered)
-            return;
-
-        foreach (Collider collider in colliders)
-            CollisionManager.UnregisterCollider(collider);
-        CollisionManager.UnregisterBody(this);
-        registered = false;
+        CollisionWorld?.Remove(this);
     }
+
+    protected override void OnRemoved() => CollisionWorld?.Remove(this);
 
     internal Vector2 ConsumeMovement(float seconds)
     {
